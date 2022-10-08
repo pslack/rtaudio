@@ -56,6 +56,7 @@ option(RTAUDIO_API_ALSA "Build ALSA API" ${LINUX})
 option(RTAUDIO_API_PULSE "Build PulseAudio API" ${pulse_FOUND})
 option(RTAUDIO_API_JACK "Build JACK audio server API" ${HAVE_JACK})
 option(RTAUDIO_API_CORE "Build CoreAudio API" ${APPLE})
+option(RTAUDIO_API_JAVA "Build Java BINDINGS" OFF)
 
 # Check for functions
 include(CheckFunctionExists)
@@ -369,3 +370,8 @@ add_custom_target(${RTAUDIO_TARGETNAME_UNINSTALL}
 install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/rtaudio.pc
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+
+if (RTAUDIO_API_JAVA)
+  list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/swig")
+  include(javaSwigModule)
+endif(RTAUDIO_API_JAVA)

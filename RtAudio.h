@@ -447,7 +447,8 @@ class RTAUDIO_DLL_PUBLIC RtAudio
   */
   std::vector<unsigned int> getDeviceIds( void );
 
-  //! A public function that returns a vector of audio device names.
+  //! A public function that returns a vector of audio device names
+  //! .
   /*!
     This function performs a system query of available devices each
     time it is called, thus supporting devices (dis)connected \e after
