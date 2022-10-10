@@ -1,5 +1,4 @@
 %module(directors="1") RtAudioAPI
-
 %{
 #include "RtAudio.h"
 %}
@@ -36,8 +35,8 @@ private	static boolean loadLibraries() {
     final String architecture = System.getProperty("sun.arch.data.model");
     final String os = System.getProperty("os.name").toLowerCase();
     String basePath="";
-    final String myClassUrl = MedimuseAPIJNI.class.getResource("MedimuseAPIJNI.class").toString();
-    final File myClassFile = new File(MedimuseAPIJNI.class.getResource("MedimuseAPIJNI.class").getPath());
+    final String myClassUrl = RtAudioAPIJNI.class.getResource("RtAudioAPIJNI.class").toString();
+    final File myClassFile = new File(RtAudioAPIJNI.class.getResource("RtAudioAPIJNI.class").getPath());
 
     ///we can tell if running in development mode here
     if(myClassUrl.startsWith("file:"))
@@ -55,11 +54,11 @@ private	static boolean loadLibraries() {
                 System.err.println("Cannot determine System Architecture, cannot launch Client: "  + architecture );
                 return false;
             }
-            basePath = "/libmedimusejava.jnilib";
+            basePath = "/librtaudiojava.jnilib";
         }
         else
         {
-            basePath = "/libmedimusejava.jnilib";
+            basePath = "/librtaudiojava.jnilib";
         }
 
         try {
@@ -124,7 +123,7 @@ public static void loadLibraryFromJar(String path) throws IOException {
         int readBytes;
 
         /// Open and check input stream
-        InputStream is = MedimuseAPIJNI.class.getResourceAsStream(path);
+        InputStream is = RtAudioAPIJNI.class.getResourceAsStream(path);
         if (is == null) {
             throw new FileNotFoundException("File " + path + " was not found inside JAR.");
         }
@@ -146,25 +145,72 @@ public static void loadLibraryFromJar(String path) throws IOException {
 }
 %}
 
+//%pragma(java) modulebase=%{
+//    public class RtAudioBase {
+//        public RtAudioBase() {
+//            // some code goes here to define the base class
+//        }
+//    }
+//    %}
+%pragma(java) modulecode=%{
+    public interface RtAudioCallBackInterface {
+        public void callback(byte[] buffer, int buffer_size, double stream_time, int status);
+    }
+    %}
+
 %include <cpointer.i>
+%pointer_functions(RtAudioCallback, RtAudioCallbackPtr);
+
+
 //%include <carrays.i>
 //%array_functions(float, floatArray);
 
 %include <std_string.i>
+#include <string>
 
-%include <std_vector.i>
-//namespace std {
-//        %template(vvfloat) vector<vector<float>>;
-//        %template(vfloat) vector<float>;
-//};
+
 
 //%include <std_map.i>
 //%include <std_pair.i>
 //%include <std_set.i>
 //%include <std_list.i>
 //%include <std_shared_ptr.i>
-%include <stdint.i>
-%include <arrays_java.i>
 
+
+%include <stdint.i>
+//%include <arrays_java.i>
+%include <typemaps.i>
+//%apply unsigned int {long};
+%typemap(in) unsigned int = int;
+%typemap(out) unsigned int = int;
+
+%include <std_vector.i>
+#include <vector>
+namespace std {
+        %template(vuint) vector<unsigned int>;
+        %template(vstring) vector<string>;
+};
+
+//typedef int(*RtAudioCallback)(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData);
+//%feature("director") RtAudioCallbackImpl;
+//%inline %{
+//class RtAudioCallbackImpl  {
+//    public:
+//        RtAudioCallbackImpl() = default;
+//        ~RtAudioCallbackImpl() = default;
+//        int callback(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData);
+//};
+//
+//int    RtAudioCallbackImpl::callback(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData)
+//    {
+//        return 0;
+//    }
+//
+//
+//%}
+//
+//
 
 %include "../RtAudio.h"
+
+
