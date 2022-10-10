@@ -11,16 +11,16 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <src.dir>src/main/java</src.dir>
-        <res.dir>src/main/resources</res.dir>
+        <!-- pass this as a -D option in the maven command to point to the base of the cmake binary build dir -->
+        <!-- it can be a full path or relative to the base directory containing this project pom.xml -->
         <cmake.binary.build.dir>cmake-build-debug</cmake.binary.build.dir>
     </properties>
 
     <build>
-        <sourceDirectory>${src.dir}</sourceDirectory>
+        <sourceDirectory>${cmake.binary.build.dir}/java</sourceDirectory>
         <resources>
             <resource>
-                <directory>${res.dir}</directory>
+                <directory>${cmake.binary.build.dir}</directory>
                 <includes>
                     <include>librtaudiojava.jnilib</include>
                 </includes>
@@ -45,18 +45,16 @@
     </build>
 
     <profiles>
+        <!-- a place holder for Release and Debug builds does nothing right now -->
         <profile>
             <id>Release</id>
             <properties>
-                <src.dir>${cmake.binary.build.dir}/java</src.dir>
-                <res.dir>${cmake.binary.build.dir}</res.dir>
+
             </properties>
         </profile>
         <profile>
             <id>Debug</id>
             <properties>
-                <src.dir>${cmake.binary.build.dir}/java</src.dir>
-                <res.dir>${cmake.binary.build.dir}</res.dir>
             </properties>
         </profile>
 
