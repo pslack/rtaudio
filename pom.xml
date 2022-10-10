@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>ca.mcgill.rtaudio</groupId>
+    <artifactId>rtaudio-core</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    <dependencies>
+    </dependencies>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <src.dir>src/main/java</src.dir>
+        <res.dir>src/main/resources</res.dir>
+        <cmake.binary.build.dir>cmake-build-debug</cmake.binary.build.dir>
+    </properties>
+
+    <build>
+        <sourceDirectory>${src.dir}</sourceDirectory>
+        <resources>
+            <resource>
+                <directory>${res.dir}</directory>
+                <includes>
+                    <include>librtaudiojava.jnilib</include>
+                </includes>
+            </resource>
+        </resources>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.2.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>Release</id>
+            <properties>
+                <src.dir>${cmake.binary.build.dir}/java</src.dir>
+                <res.dir>${cmake.binary.build.dir}</res.dir>
+            </properties>
+        </profile>
+        <profile>
+            <id>Debug</id>
+            <properties>
+                <src.dir>${cmake.binary.build.dir}/java</src.dir>
+                <res.dir>${cmake.binary.build.dir}</res.dir>
+            </properties>
+        </profile>
+
+    </profiles>
+
+
+</project>
