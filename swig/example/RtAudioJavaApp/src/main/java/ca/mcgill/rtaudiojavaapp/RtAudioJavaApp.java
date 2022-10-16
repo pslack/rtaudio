@@ -6,7 +6,10 @@
 package ca.mcgill.rtaudiojavaapp;
 
 import ca.mcgill.rtaudio.api.RtAudio;
+import ca.mcgill.rtaudio.api.RtAudio.StreamParameters;
 import ca.mcgill.rtaudio.api.RtAudioAPI;
+import ca.mcgill.rtaudio.api.RtAudioErrorType;
+import ca.mcgill.rtaudio.api.SWIGTYPE_p_unsigned_int;
 import java.util.List;
 
 /**
@@ -32,6 +35,69 @@ public class RtAudioJavaApp {
         
         }
         
+        // try and open and close a stream on the default device
+        long defaultOutputDevice= rtAudio.getDefaultOutputDevice();
+        RtAudio.DeviceInfo dOut = rtAudio.getDeviceInfo(defaultOutputDevice);
+        
+        RtAudio.StreamParameters outParms = new StreamParameters();
+        outParms.setNChannels(2);
+        outParms.setFirstChannel(0);
+        outParms.setDeviceId(defaultOutputDevice);
+        
+        
+        class Callbacker implements RtAudioAPI.RtAudioCallBackInterface {
+         public long callBackCounter = 0;
+
+            @Override
+            public int callback(byte[] outbytes, byte[] inbytes, int i, double d, int i1) {
+                callBackCounter++;
+                       
+                return 0;
+            }
+        }
+        
+       
+        Callbacker cb = new Callbacker();
+        
+        RtAudioAPI.SetCallback(cb);
+        
+       SWIGTYPE_p_unsigned_int buffers = RtAudioAPI.new_UnsignedIntPtr();
+       RtAudioAPI.UnsignedIntPtr_assign(buffers, 256);
+       
+       long preferredSampleRate = dOut.getPreferredSampleRate();
+       
+       RtAudioErrorType err = rtAudio.openStream(outParms, null, RtAudioAPI.getRTAUDIO_FLOAT32(), preferredSampleRate, buffers, cb);
+       
+       if (err != RtAudioErrorType.RTAUDIO_NO_ERROR) {
+           System.exit(1);
+       }
+       
+       
+       
+       System.out.println("\nSTREAM OPEN ATTEMPT *********************** ");
+       System.out.println("OPEN STATUS RETURN : " + err.toString());
+       System.out.println("Returned buffsize  : " + RtAudioAPI.UnsignedIntPtr_value(buffers));
+       System.out.println("Stream Latency     : " + rtAudio.getStreamLatency());
+       System.out.println("Stream SampleRate  : " + rtAudio.getStreamSampleRate());
+       System.out.println("Stream Time        : " + rtAudio.getStreamTime());
+       
+       err = rtAudio.startStream();
+
+       System.out.println("START MSG " + err.toString());
+       
+        pressEnterToContinue(" Press Return Key to shut down stream and exit");
+       
+        err= rtAudio.abortStream();
+        
+       System.out.println("ABORT MSG " + err.toString());
+        
+       
+        
+       rtAudio.closeStream();
+       
+       System.out.println("callbacks " + cb.callBackCounter);
+       
+       System.exit(0);
         
     }
     
@@ -53,5 +119,16 @@ public class RtAudioJavaApp {
     
     }
     
+    
+    public static void pressEnterToContinue(String message)
+ { 
+        System.out.println(message);
+        try
+        {
+            System.in.read();
+        }  
+        catch(Exception e)
+        {}  
+ }
     
 }
