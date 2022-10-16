@@ -145,21 +145,14 @@ public static void loadLibraryFromJar(String path) throws IOException {
 }
 %}
 
-//%pragma(java) modulebase=%{
-//    public class RtAudioBase {
-//        public RtAudioBase() {
-//            // some code goes here to define the base class
-//        }
-//    }
-//    %}
 %pragma(java) modulecode=%{
     public interface RtAudioCallBackInterface {
-        public void callback(byte[] buffer, int buffer_size, double stream_time, int status);
+        public int callback(byte[] outbuffer, byte[] inbuffer, int buffer_size, double stream_time, int status);
     }
     %}
 
 %include <cpointer.i>
-%pointer_functions(RtAudioCallback, RtAudioCallbackPtr);
+%pointer_functions(unsigned int, UnsignedIntPtr);
 
 
 //%include <carrays.i>
@@ -168,21 +161,8 @@ public static void loadLibraryFromJar(String path) throws IOException {
 %include <std_string.i>
 #include <string>
 
-
-
-//%include <std_map.i>
-//%include <std_pair.i>
-//%include <std_set.i>
-//%include <std_list.i>
-//%include <std_shared_ptr.i>
-
-
 %include <stdint.i>
-//%include <arrays_java.i>
 %include <typemaps.i>
-//%apply unsigned int {long};
-%typemap(in) unsigned int = int;
-%typemap(out) unsigned int = int;
 
 %include <std_vector.i>
 #include <vector>
@@ -191,26 +171,97 @@ namespace std {
         %template(vstring) vector<string>;
 };
 
-//typedef int(*RtAudioCallback)(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData);
-//%feature("director") RtAudioCallbackImpl;
-//%inline %{
-//class RtAudioCallbackImpl  {
-//    public:
-//        RtAudioCallbackImpl() = default;
-//        ~RtAudioCallbackImpl() = default;
-//        int callback(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData);
-//};
+%{
+#include <assert.h>
+
+// NEW: global variables (bleurgh!)
+static jobject obj;
+static JavaVM *jvm;
+static RtAudioCallback  cb = 0;
+
+/*
+ This function returns the current thread attached to the jni
+ it will return null if unsuccessful otherwise it returns the envinronment
+ The caller is responsible for detaching the thread
+ */
+static JNIEnv * attachJNIThread()
+{
+    JNIEnv* env;
+
+    if (jvm != NULL) {
+
+        if (jvm->AttachCurrentThread((void**)&env, NULL)<0){
+            return (JNIEnv *) NULL;
+        } else {
+            return env;
+        }
+
+    }else{
+
+        return (JNIEnv *) NULL;
+
+    }
+}
+
+void SetCallback(const RtAudioCallback SomeCallback) {
+    //TODO: we need to handle the case where the callback is already set
+    printf("Callback was set in the native code \n");
+
+    cb = SomeCallback;
+}
+
+// 2:
+static int java_callback(void *outputBuffer, void *inputBuffer,
+                         unsigned int nFrames,
+                         double streamTime,
+                         RtAudioStreamStatus status,
+                         void *userData) {
+
+    JNIEnv *jenv = attachJNIThread();
+    assert(jenv != NULL);
+    const jclass cbintf = jenv->GetObjectClass(obj);    // get the class of the object
+    assert(cbintf);
+
+    const jmethodID cbmeth = jenv->GetMethodID( cbintf, "callback", "([B[BIDI)I");
+    assert(cbmeth);
+
+//    const jbyteArray jinputbuf = jenv->NewByteArray( nFrames);
+//    jenv->SetByteArrayRegion( jinputbuf, 0, nFrames, (jbyte*)inputBuffer);
 //
-//int    RtAudioCallbackImpl::callback(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames, double streamTime, RtAudioStreamStatus status, void *userData)
-//    {
-//        return 0;
-//    }
-//
-//
-//%}
-//
-//
+//    const jbyteArray joutputbuf = jenv->NewByteArray( nFrames);
+//    jenv->SetByteArrayRegion(joutputbuf, 0, nFrames, (jbyte*)outputBuffer);
+
+    const jint jbufsize = nFrames;
+    const jdouble jstreamtime = streamTime;
+    const jint jstatus = status;
+
+    //TODO: we want to handle IO with NIO buffers
+    const jint jret = jenv->CallIntMethod( obj, cbmeth,NULL, NULL, jbufsize, jstreamtime, jstatus);
+//    jenv->DeleteLocalRef( jinputbuf);
+//    jenv->DeleteLocalRef( joutputbuf);
+    jenv->DeleteLocalRef( cbintf);
+
+    return jret;
+
+}
+
+    %}
+
+// 3:
+%typemap(jstype) RtAudioCallback "RtAudioAPI.RtAudioCallBackInterface";
+%typemap(jtype) RtAudioCallback "RtAudioAPI.RtAudioCallBackInterface";
+%typemap(jni) RtAudioCallback "jobject";
+%typemap(javain) RtAudioCallback "$javainput";
+
+// 4: (modified, not a multiarg typemap now)
+%typemap(in) RtAudioCallback {
+JCALL1(GetJavaVM, jenv, &jvm);
+obj = JCALL1(NewGlobalRef, jenv, $input);
+JCALL1(DeleteLocalRef, jenv, $input);
+$1 = java_callback;
+}
+
+//%apply unsigned int *INOUT {unsigned int *x};
 
 %include "../RtAudio.h"
-
-
+void SetCallback(const RtAudioCallback SomeCallback);
