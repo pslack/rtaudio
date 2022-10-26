@@ -88,6 +88,7 @@ To use this local repository in your maven java project, add the following depen
 ```
 There are also binary artifacts that are published
 
+<<<<<<< HEAD
 For windows
 
 ```xml
@@ -116,8 +117,6 @@ The binaries are archived inside the jar file and are provided seperately
 for hardened exec environments the full path to the library would be required
 For systems more permissive the library inside the bundle and expanded at run time
 can work.
-
-
 
 There is an example maven project that tests the RtAudio java wrapper project in  
 
