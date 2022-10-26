@@ -44,7 +44,58 @@ RtAudio is designed as a single `.cpp` and `.h` file so that it is easy to copy 
 into a project.  In that case you need to define the appropriate flags for the desired
 backend APIs.
 
-## FAQ
+## Building Java Bindings
+
+Currently only OSX is supported / tested. and this is only available in CMAKE builds
+
+### Prerequisites for build machine
+    
+      - JDK 11 or later
+      - CMake 3.1 or later
+      - SWIG 4.0.2 or later and on the build path  
+      - maven 3.6.3 or later and on the build path  
+      - rtAudio installed locally 
+        to run tests or use this library        
+        
+### Build instructions
+
+1. set cmake option BUILD_JAVA_BINDINGS to ON
+
+This can be done by adding 
+> -DBUILD_JAVA_BINDINGS=ON
+
+to the cmake command line. 
+Building target 'rtaudiojava' generates the JNI library and generates 
+the java wrapper source code in your cmake build directory in a folder named java.
+    
+2. open a terminal at the root of this cmake project and issue the command 
+```bash
+mvn clean install 
+```
+
+This will create a target folder in the cmake build directory. The target folder contains the java wrapper jar file bundled with the JNI native library. The jar file can be used in your java project. 
+
+The maven product is also published to the local maven repository (usually .m2 folder on one's user home directory)
+
+To use this local repository in your java project, add the following dependency to your pom.xml file
+
+```xml
+<dependency>
+   <groupId>ca.mcgill.rtaudio</groupId>
+   <artifactId>rtaudio-core</artifactId>
+   <version>1.0-SNAPSHOT</version>
+   <scope>compile</scope>            
+   <type>jar</type>
+</dependency>  
+```
+
+There is an example program that tests the RtAudio java wrapper project in  
+
+> swig/example/RtAudioJavaApp
+
+
+
+##FAQ
 
 ### Why does audio only come to one ear when I choose 1-channel output?
 
