@@ -74,11 +74,11 @@ the java wrapper source code in your cmake build directory in a folder named jav
 mvn clean install 
 ```
 
-This will create a target folder in the cmake build directory. The target folder contains the java wrapper jar file bundled with the JNI native library. The jar file can be used in your java project. 
+This will create a 'target' folder in the cmake project directory. The target folder contains the java wrapper jar file bundled with the JNI native library. The jar file can be used in your java project. 
 
 The maven product is also published to the local maven repository (usually .m2 folder on one's user home directory)
 
-To use this local repository in your java project, add the following dependency to your pom.xml file
+To use this local repository in your maven java project, add the following dependency to your pom.xml file
 
 ```xml
 <dependency>
