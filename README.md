@@ -69,8 +69,6 @@ to the cmake command line.
 Building target 'rtaudiojava' generates the JNI library and generates 
 the java wrapper source code in your cmake build directory in a folder named java.
     
-
-
 This will create a 'target' folder in the cmake project directory. The target folder contains the java wrapper jar file bundled with the JNI native library. The jar file can be used in your java project. 
 
 The maven product is also published to the local maven repository (usually .m2 folder on one's user home directory)
@@ -88,7 +86,6 @@ To use this local repository in your maven java project, add the following depen
 ```
 There are also binary artifacts that are published
 
-<<<<<<< HEAD
 For windows
 
 ```xml
