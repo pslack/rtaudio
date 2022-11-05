@@ -142,4 +142,10 @@ swig_add_library(rtaudiojava TYPE SHARED LANGUAGE java
 target_include_directories(rtaudiojava PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/include")
 swig_link_libraries(rtaudiojava PUBLIC rtaudio)
 
+add_custom_command(TARGET rtaudiojava POST_BUILD
+        COMMAND mvn clean install -Dcmake.binary.build.dir=${CMAKE_CURRENT_BINARY_DIR}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMENT "Building artifacts"
+        )
+
 

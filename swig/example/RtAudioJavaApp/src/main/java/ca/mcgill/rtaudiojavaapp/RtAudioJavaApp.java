@@ -101,6 +101,7 @@ public class RtAudioJavaApp {
         
     }
     
+    
     public static void printDeviceInfo(RtAudio.DeviceInfo device) {
     
         System.out.println("Name                  : " + device.getName());

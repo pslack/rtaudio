@@ -2,9 +2,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>ca.mcgill.rtaudio</groupId>
-    <artifactId>rtaudio-core</artifactId>
+    <artifactId>rtaudio-parent</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
     <dependencies>
     </dependencies>
     <properties>
@@ -16,48 +16,49 @@
         <cmake.binary.build.dir>cmake-build-debug</cmake.binary.build.dir>
     </properties>
 
-    <build>
-        <sourceDirectory>${cmake.binary.build.dir}/java</sourceDirectory>
-        <resources>
-            <resource>
-                <directory>${cmake.binary.build.dir}</directory>
-                <includes>
-                    <include>librtaudiojava.jnilib</include>
-                </includes>
-            </resource>
-        </resources>
-
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>3.2.1</version>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
-
     <profiles>
-        <!-- a place holder for Release and Debug builds does nothing right now -->
         <profile>
-            <id>Release</id>
+            <id>mac-X86_64</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                    <arch>x86_64</arch>
+                </os>
+            </activation>
+            <properties>
+
+            </properties>
+            <modules>
+                <module>swig/ca.mcgill.rtaudio.nativelibraries/mac/X86_64</module>
+                <module>swig/ca.mcgill.rtaudio.rtaudio-core</module>
+            </modules>
+
+
+        </profile>
+        <profile>
+            <id>linux-X86_64</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                    <arch>x86_64</arch>
+                </os>
+            </activation>
             <properties>
 
             </properties>
         </profile>
         <profile>
-            <id>Debug</id>
+            <id>windows-X86_64</id>
+            <activation>
+                <os>
+                    <family>windows</family>
+                    <arch>x86_64</arch>
+                </os>
+            </activation>
             <properties>
+
             </properties>
         </profile>
-
     </profiles>
 
 
