@@ -52,10 +52,10 @@ Currently only OSX is supported / tested. and this is only available in CMAKE bu
     
       - JDK 11 or later
       - CMake 3.1 or later
-      - SWIG 4.0.2 or later and on the build path  
-      - maven 3.6.3 or later and on the build path  
+      - SWIG 4.0.2 or later and swig available on the environment PATH  
+      - maven 3.6.3 or later and on the environment PATH
       - rtAudio installed locally 
-        to run tests or use this library        
+        to run tests or use this library in your projects       
         
 ### Build instructions
 
@@ -73,11 +73,11 @@ the java wrapper source code in your cmake build directory in a folder named jav
 mvn clean install 
 ```
 
-This will create a target folder in the cmake build directory. The target folder contains the java wrapper jar file bundled with the JNI native library. The jar file can be used in your java project. 
+This will create a 'target' folder in the cmake project directory. The target folder contains the java wrapper jar file bundled with the JNI native library. The jar file can be used in your java project. 
 
 The maven product is also published to the local maven repository (usually .m2 folder on one's user home directory)
 
-To use this local repository in your java project, add the following dependency to your pom.xml file
+To use this local repository in your maven java project, add the following dependency to your pom.xml file
 
 ```xml
 <dependency>
@@ -89,7 +89,7 @@ To use this local repository in your java project, add the following dependency 
 </dependency>  
 ```
 
-There is an example program that tests the RtAudio java wrapper project in  
+There is an example maven project that tests the RtAudio java wrapper project in  
 
 > swig/example/RtAudioJavaApp
 
