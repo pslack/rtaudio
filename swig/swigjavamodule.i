@@ -20,10 +20,19 @@ import java.io.OutputStream;
 
 %pragma(java) jniclasscode=%{
 static {
-if (! loadLibraries() ) {
-System.err.println("Native code library failed to load.");
-System.exit(1);
-}
+//if (! loadLibraries() ) {
+//System.err.println("Native code library failed to load.");
+//System.exit(1);
+try {
+        System.loadLibrary("rtaudiojava");
+    } catch (UnsatisfiedLinkError e) {
+        System.err.println("Native code library failed to load.\n" + e);
+        if (!loadLibraries() ) {
+            System.err.println("Native code library failed to load.");
+            System.exit(1);
+        }
+//        System.exit(1);
+    }
 }
 
 private static boolean librariesLoaded = false;
