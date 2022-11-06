@@ -24,7 +24,33 @@ static {
 //System.err.println("Native code library failed to load.");
 //System.exit(1);
 try {
-        System.loadLibrary("rtaudiojava");
+// get system property for jlauncher to see if we are in a production mode
+// if so, we need to load the libraries from a full path because of
+// the hqrdened code in production you cannot load libraries from
+// a path but required to use the full path filename
+
+String prod = System.getProperty("jlauncher.library.path");
+String lib = "rtaudiojava";
+if (prod != null) {
+    String path = System.getProperty("jlauncher.library.path");
+    // if this is mac osx then it is a .dylib
+    // ifi this is windows then it is a .dll
+    // if this is linux then it is a .so
+    String os = System.getProperty("os.name");
+    lib = "lib"+lib;
+    if (os.toLowerCase().contains("windows")) {
+        lib = lib + ".dll";
+    } else if (os.toLowerCase().contains("mac")) {
+        lib = lib + ".dylib";
+    } else {
+        lib = lib + ".so";
+    }
+lib = path + File.separator + lib;
+System.out.println("loading library: " + lib);
+System.load(lib);
+} else {
+System.loadLibrary(lib);
+}
     } catch (UnsatisfiedLinkError e) {
         System.err.println("Native code library failed to load.\n" + e);
         if (!loadLibraries() ) {
