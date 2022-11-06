@@ -34,8 +34,6 @@ String prod = System.getProperty("jlauncher.library.path");
 String lib = "rtaudiojava";
 String os = System.getProperty("os.name");
 
-
-
 if (prod != null) {
     String path = System.getProperty("jlauncher.library.path");
 
@@ -52,8 +50,6 @@ lib = lib + ".dll";
     lib = "lib"+lib;
     lib = lib + ".so";
 }
-
-
     lib = path + File.separator + lib;
     System.out.println("loading library: " + lib);
     System.load(lib);
