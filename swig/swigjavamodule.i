@@ -28,7 +28,6 @@ static {
 // a path but required to use the full path filename
 
 
-
 try {
 
 String prod = System.getProperty("jlauncher.library.path");
