@@ -69,10 +69,7 @@ to the cmake command line.
 Building target 'rtaudiojava' generates the JNI library and generates 
 the java wrapper source code in your cmake build directory in a folder named java.
     
-2. open a terminal at the root of this cmake project and issue the command 
-```bash
-mvn clean install 
-```
+
 
 This will create a 'target' folder in the cmake project directory. The target folder contains the java wrapper jar file bundled with the JNI native library. The jar file can be used in your java project. 
 
@@ -89,6 +86,38 @@ To use this local repository in your maven java project, add the following depen
    <type>jar</type>
 </dependency>  
 ```
+There are also binary artifacts that are published
+
+For windows
+
+```xml
+<dependency>
+   <groupId>ca.mcgill.rtaudio</groupId>
+   <artifactId>rtaudio-core-native-windows-X86_64</artifactId>
+   <version>1.0-SNAPSHOT</version>
+   <scope>compile</scope>            
+   <type>jar</type>
+</dependency>  
+```
+
+for OSX
+
+```xml
+<dependency>
+   <groupId>ca.mcgill.rtaudio</groupId>
+   <artifactId>rtaudio-core-native-mac-X86_64</artifactId>
+   <version>1.0-SNAPSHOT</version>
+   <scope>compile</scope>            
+   <type>jar</type>
+</dependency>  
+```
+The binaries are archived inside the jar file and are provided seperately
+
+for hardened exec environments the full path to the library would be required
+For systems more permissive the library inside the bundle and expanded at run time
+can work.
+
+
 
 There is an example maven project that tests the RtAudio java wrapper project in  
 
