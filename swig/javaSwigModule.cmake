@@ -35,6 +35,10 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
     message("DARWIN is active")
 endif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
 
+message("cmake build type is set to ${CMAKE_BUILD_TYPE}" )
+message("cmake binary dir set to ${CMAKE_CURRENT_BINARY_DIR}")
+message("build folder is set to $ENV{BUILD_FOLDER}")
+
 # semantics to find our java
 
 include(FindJNI)
@@ -91,24 +95,19 @@ else ()
         #   set(CMAKE_FIND_ROOT_PATH "${JAVA_HOME}")
         #   set(CMAKE_FIND_USE_CMAKE_SYSTEM_PATH "${JAVA_HOME}")
 
-        set(CMAKE_FIND_DEBUG_MODE TRUE)
-        find_package(JNI ) #TODO@ add REQUIRED, But cant use PATHS ${JAVA_HOME} as it triggers FindProjname.cmake mode
-        set(CMAKE_FIND_DEBUG_MODE FALSE)
-
-        if(JNI_FOUND)
-            message (STATUS " JNI_INCLUDE_DIRS=${JNI_INCLUDE_DIRS}")
-            message (STATUS " JNI_LIBRARIES=${JNI_LIBRARIES}")
-        else()
-            message (STATUS " JNI is NOT FOUND")
-        endif()
+        find_package(Java COMPONENTS Development)
+        #find_package(JNI ) #TODO@ add REQUIRED, But cant use PATHS ${JAVA_HOME} as it triggers FindProjname.cmake mode
+        #set(CMAKE_FIND_DEBUG_MODE FALSE)
 
         if (NOT JNI_FOUND)
             message (FATAL_ERROR "No JNI found, cannot build")
         else()
-            # message (STATUS "JNI_INCLUDE_DIRS=${JNI_INCLUDE_DIRS}")
+            message (STATUS "JNI_INCLUDE_DIRS=${JNI_INCLUDE_DIRS}")
             set(JAVA_JNI_INCLUDE ${JNI_INCLUDE_DIRS})
-            # message (STATUS "JNI_LIBRARIES=${JNI_LIBRARIES}")
+            message (STATUS "JNI_LIBRARIES=${JNI_LIBRARIES}")
             set(JAVA_JNI_LIB ${JNI_LIBRARIES})
+
+
         endif()
     endif(NOT ANDROID)
 endif ()
@@ -139,11 +138,11 @@ swig_add_library(rtaudiojava TYPE SHARED LANGUAGE java
         SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/swig/swigjavamodule.i"
         )
 
-target_include_directories(rtaudiojava PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_include_directories(rtaudiojava PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/include" ${JNI_INCLUDE_DIRS})
 swig_link_libraries(rtaudiojava PUBLIC rtaudio)
 
 add_custom_command(TARGET rtaudiojava POST_BUILD
-        COMMAND mvn clean install -Dcmake.binary.build.dir=${CMAKE_CURRENT_BINARY_DIR}
+        COMMAND mvn clean install -Dcmake.binary.build.dir=${CMAKE_CURRENT_BINARY_DIR} -Dcmake.build.type=${CMAKE_BUILD_TYPE}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMENT "Building artifacts"
         )
