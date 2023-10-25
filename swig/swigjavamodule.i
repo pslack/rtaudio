@@ -20,38 +20,49 @@ import java.io.OutputStream;
 
 %pragma(java) jniclasscode=%{
 static {
-//if (! loadLibraries() ) {
-//System.err.println("Native code library failed to load.");
-//System.exit(1);
-try {
-// get system property for jlauncher to see if we are in a production mode
+    // get system property for jlauncher to see if we are in a production mode
 // if so, we need to load the libraries from a full path because of
 // the hqrdened code in production you cannot load libraries from
 // a path but required to use the full path filename
 
-    String prod = System.getProperty("jlauncher.library.path");
-    String lib = "rtaudiojava";
-    if (prod != null) {
-        String path = System.getProperty("jlauncher.library.path");
-        // if this is mac osx then it is a .dylib
-        // ifi this is windows then it is a .dll
-        // if this is linux then it is a .so
-        String os = System.getProperty("os.name");
-        lib = "lib"+lib + ".jnilib";
 
-        lib = path + File.separator + lib;
-        System.out.println("loading library: " + lib);
-        System.load(lib);
-    } else {
-        System.loadLibrary(lib);
-    }
-} catch (UnsatisfiedLinkError e) {
-    System.err.println("Native code library failed to load.\n" + e);
-    if (!loadLibraries() ) {
-        System.err.println("Native code library failed to load.");
-        System.exit(1);
-    }
+try {
+
+String prod = System.getProperty("jlauncher.library.path");
+String lib = "rtaudiojava";
+String os = System.getProperty("os.name");
+
+
+// if this is mac osx then it is a .dylib
+// ifi this is windows then it is a .dll
+// if this is linux then it is a .so
+
+if (os.toLowerCase().contains("windows")) {
+    lib = lib + ".dll";
+} else if (os.toLowerCase().contains("mac")) {
+    lib = "lib"+lib;
+    lib = lib + ".dylib";
+} else {
+    lib = "lib"+lib;
+    lib = lib + ".so";
 }
+
+if (prod != null) {
+    String path = System.getProperty("jlauncher.library.path");
+
+    lib = path + File.separator + lib;
+    System.out.println("loading library: " + lib);
+    System.load(lib);
+} else {
+    System.loadLibrary(lib);
+}
+    } catch (UnsatisfiedLinkError e) {
+        System.err.println("Native code library failed to load.\n" + e);
+        if (!loadLibraries() ) {
+            System.err.println("Native code library failed to load.");
+            System.exit(1);
+        }
+    }
 }
 
 private static boolean librariesLoaded = false;
@@ -59,9 +70,33 @@ private static boolean librariesLoaded = false;
 private	static boolean loadLibraries() {
     if(librariesLoaded)
         return true;
+
+    String prod = System.getProperty("jlauncher.library.path");
+    String lib = "rtaudiojava";
+    String os = System.getProperty("os.name");
+
+
+// if this is mac osx then it is a .dylib
+// ifi this is windows then it is a .dll
+// if this is linux then it is a .so
+
+    if (os.toLowerCase().contains("windows")) {
+        lib = lib + ".dll";
+    } else if (os.toLowerCase().contains("mac")) {
+        lib = "lib"+lib;
+        lib = lib + ".dylib";
+    } else {
+        lib = "lib"+lib;
+        lib = lib + ".so";
+    }
+
+
+
+
+
     //what is the bitness of our JVM
     final String architecture = System.getProperty("sun.arch.data.model");
-    final String os = System.getProperty("os.name").toLowerCase();
+
     String basePath="";
     final String myClassUrl = RtAudioAPIJNI.class.getResource("RtAudioAPIJNI.class").toString();
     final File myClassFile = new File(RtAudioAPIJNI.class.getResource("RtAudioAPIJNI.class").getPath());
@@ -73,22 +108,7 @@ private	static boolean loadLibraries() {
     }
     else
     {
-        /// if windows we use native launcher
-        if (os.indexOf("win") >= 0)
-        {
-            /// From the Java documentation, this should be either '32' or '64' or 'unknown'
-            if( architecture == null || !( architecture.equals( "32" ) || architecture.equals( "64" ) ) )
-            {
-                System.err.println("Cannot determine System Architecture, cannot launch Client: "  + architecture );
-                return false;
-            }
-            basePath = "/librtaudiojava.jnilib";
-        }
-        else
-        {
-            basePath = "/librtaudiojava.jnilib";
-        }
-
+        basePath = "/" + lib;
         try {
             loadLibraryFromJar(basePath);
         } catch (FileNotFoundException e) {

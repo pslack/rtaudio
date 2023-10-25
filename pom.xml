@@ -14,6 +14,7 @@
         <!-- pass this as a -D option in the maven command to point to the base of the cmake binary build dir -->
         <!-- it can be a full path or relative to the base directory containing this project pom.xml -->
         <cmake.binary.build.dir>cmake-build-debug</cmake.binary.build.dir>
+        <cmake.build.type></cmake.build.type>
     </properties>
 
     <profiles>
@@ -52,12 +53,19 @@
             <activation>
                 <os>
                     <family>windows</family>
-                    <arch>x86_64</arch>
+                    <arch>amd64</arch>
                 </os>
             </activation>
             <properties>
 
+
+
             </properties>
+
+            <modules>
+                <module>swig/ca.mcgill.rtaudio.nativelibraries/windows/X86_64</module>
+                <module>swig/ca.mcgill.rtaudio.rtaudio-core</module>
+            </modules>
         </profile>
     </profiles>
 
