@@ -28,6 +28,7 @@ static {
 // a path but required to use the full path filename
 
 
+
 try {
 
 String prod = System.getProperty("jlauncher.library.path");
@@ -63,6 +64,7 @@ lib = lib + ".dll";
             System.exit(1);
         }
     }
+
 }
 
 private static boolean librariesLoaded = false;
