@@ -40,77 +40,29 @@ message("cmake binary dir set to ${CMAKE_CURRENT_BINARY_DIR}")
 message("build folder is set to $ENV{BUILD_FOLDER}")
 
 # semantics to find our java
+if(DARWIN)
+    message("DARWIN is active")
+    execute_process(COMMAND /usr/libexec/java_home OUTPUT_VARIABLE JAVA_HOME_DEFAULT OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-include(FindJNI)
-if (DARWIN)
-    if (NOT JNI_FOUND)
-        message (STATUS "Could not find JNI, retrying for JDK.")
-        execute_process(COMMAND /usr/libexec/java_home OUTPUT_VARIABLE JAVA_HOME OUTPUT_STRIP_TRAILING_WHITESPACE)
-        message (STATUS "my JAVA_HOME=${JAVA_HOME}")
-        if (NOT JAVA_HOME)
-            message (FATAL_ERROR "Could not find JDK Java home, fatal.")
-            return()
-        endif ()
-
-        set(JAVA_JNI_INCLUDE ${JAVA_HOME}/include)
-        if (APPLE)
-            set(JAVA_JNI_INCLUDE ${JAVA_JNI_INCLUDE} ${JAVA_JNI_INCLUDE}/darwin )
-        endif()
-        message (STATUS "my JAVA_JNI_INCLUDE=${JAVA_JNI_INCLUDE}")
-
-        #message(STATUS "here ${JAVA_HOME}/jre/lib/jli")
-        find_library(JAVA_JNI_LIB NAMES jli HINTS "${JAVA_HOME}/lib/jli" "${JAVA_HOME}/jre/lib/jli")
-        #message (STATUS "my JAVA_JNI_LIB=${JAVA_JNI_LIB}")
-
-        if (NOT JAVA_JNI_INCLUDE OR NOT JAVA_JNI_LIB)
-            message (FATAL_ERROR "Could not find JDK Java JNI, fatal.")
-            return()
-        else ()
-            message (STATUS "JDK resolved.")
-            include_directories(${JAVA_JNI_INCLUDE})
-        endif ()
-    else()
-        message (STATUS "JNI_INCLUDE_DIRS=${JNI_INCLUDE_DIRS}")
-        set(JAVA_JNI_INCLUDE ${JNI_INCLUDE_DIRS})
-        message (STATUS "JNI_LIBRARIES=${JNI_LIBRARIES}")
-        set(JAVA_JNI_LIB ${JNI_LIBRARIES})
-    endif()
-else ()
-    if(NOT ANDROID)
-        #include(FindJNI)
-
-        include(UseJava)
-        if(DEFINED ENV{JAVA_HOME})
-            set(JAVA_HOME "$ENV{JAVA_HOME}")
-        else()
-            set(JAVA_HOME /opt/jdk/jdk8)
-        endif()
-        message(STATUS "JAVA_HOME  variable is defined or set as '${JAVA_HOME}'")
-
-        # set(JAVA_AWT_LIBRARY "${JAVA_HOME}/lib/amd64") #the path to the Java AWT Native Interface (JAWT) library
-        # set(JAVA_JVM_LIBRARY "${JAVA_HOME}/lib/amd64/server") #the path to the Java Virtual Machine (JVM) library
-        # set(JAVA_INCLUDE_PATH "${JAVA_HOME}/include")  #the include path to jni.h
-        # set(JAVA_INCLUDE_PATH2 "${JAVA_HOME}/include/linux") # the include path to jni_md.h and jniport.h
-        # set(JAVA_AWT_INCLUDE_PATH "${JAVA_HOME}/include")    # the include path to jawt.h
-        #   set(CMAKE_FIND_ROOT_PATH "${JAVA_HOME}")
-        #   set(CMAKE_FIND_USE_CMAKE_SYSTEM_PATH "${JAVA_HOME}")
-
-        find_package(Java COMPONENTS Development)
-        #find_package(JNI ) #TODO@ add REQUIRED, But cant use PATHS ${JAVA_HOME} as it triggers FindProjname.cmake mode
-        #set(CMAKE_FIND_DEBUG_MODE FALSE)
-
-        if (NOT JNI_FOUND)
-            message (FATAL_ERROR "No JNI found, cannot build")
-        else()
-            message (STATUS "JNI_INCLUDE_DIRS=${JNI_INCLUDE_DIRS}")
-            set(JAVA_JNI_INCLUDE ${JNI_INCLUDE_DIRS})
-            message (STATUS "JNI_LIBRARIES=${JNI_LIBRARIES}")
-            set(JAVA_JNI_LIB ${JNI_LIBRARIES})
+    set(JAVA_HOME ${JAVA_HOME_DEFAULT} CACHE PATH "Java home directory")
+    set(JAVA_INCLUDE_PATH ${JAVA_HOME_DEFAULT}/include CACHE PATH "Java include directory")
+    set(JAVA_INCLUDE_PATH2 ${JAVA_HOME_DEFAULT}/include/darwin CACHE PATH "Java include directory2")
+    set(JAVA_AWT_INCLUDE_PATH ${JAVA_INCLUDE_PATH} CACHE PATH "Java awt include directory")
+endif(DARWIN)
 
 
-        endif()
-    endif(NOT ANDROID)
-endif ()
+find_package(JNI REQUIRED)
+
+if (JNI_FOUND)
+    message (STATUS "JNI_INCLUDE_DIRS=${JNI_INCLUDE_DIRS}")
+    message (STATUS "JNI_LIBRARIES=${JNI_LIBRARIES}")
+else()
+    message (FATAL_ERROR "Could not find JNI, fatal.")
+
+endif()
+
+
+
 
 
 cmake_policy(SET CMP0078 NEW)

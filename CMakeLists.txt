@@ -373,6 +373,7 @@ install(
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 
 if (RTAUDIO_API_JAVA)
+
   list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/swig")
   include(javaSwigModule)
 endif(RTAUDIO_API_JAVA)
