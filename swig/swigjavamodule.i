@@ -33,22 +33,24 @@ String lib = "rtaudiojava";
 String os = System.getProperty("os.name");
 
 
+
+if (prod != null) {
+    String path = System.getProperty("jlauncher.library.path");
+
 // if this is mac osx then it is a .dylib
 // ifi this is windows then it is a .dll
 // if this is linux then it is a .so
 
 if (os.toLowerCase().contains("windows")) {
-    lib = lib + ".dll";
+lib = lib + ".dll";
 } else if (os.toLowerCase().contains("mac")) {
     lib = "lib"+lib;
-    lib = lib + ".dylib";
+    lib = lib + ".jnilib";
 } else {
     lib = "lib"+lib;
     lib = lib + ".so";
 }
 
-if (prod != null) {
-    String path = System.getProperty("jlauncher.library.path");
 
     lib = path + File.separator + lib;
     System.out.println("loading library: " + lib);
@@ -84,7 +86,7 @@ private	static boolean loadLibraries() {
         lib = lib + ".dll";
     } else if (os.toLowerCase().contains("mac")) {
         lib = "lib"+lib;
-        lib = lib + ".dylib";
+        lib = lib + ".jnilib";
     } else {
         lib = "lib"+lib;
         lib = lib + ".so";
