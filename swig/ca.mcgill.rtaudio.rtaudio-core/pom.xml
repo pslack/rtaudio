@@ -39,7 +39,10 @@
                     </execution>
                 </executions>
             </plugin>
+<<<<<<< HEAD
 
+=======
+>>>>>>> fab967f (simplify java in cmake launch in debug and production modes)
   <!--          <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jarsigner-plugin</artifactId>
@@ -62,6 +65,7 @@
                         </configuration>
                     </execution>
                 </executions>
+
 
             </plugin> -->
         </plugins>
