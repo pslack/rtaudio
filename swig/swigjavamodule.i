@@ -15,6 +15,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
+
 
 %}
 
@@ -197,7 +199,7 @@ public static void loadLibraryFromJar(String path) throws IOException {
 
 %pragma(java) modulecode=%{
     public interface RtAudioCallBackInterface {
-        public int callback(byte[] outbuffer, byte[] inbuffer, int buffer_size, double stream_time, int status);
+        public int callback(java.nio.ByteBuffer outbuffer, java.nio.ByteBuffer inbuffer, int buffer_size, double stream_time, int status);
     }
     %}
 
@@ -272,8 +274,18 @@ static int java_callback(void *outputBuffer, void *inputBuffer,
     const jclass cbintf = jenv->GetObjectClass(obj);    // get the class of the object
     assert(cbintf);
 
-    const jmethodID cbmeth = jenv->GetMethodID( cbintf, "callback", "([B[BIDI)I");
+    const jmethodID cbmeth = jenv->GetMethodID( cbintf, "callback", "(Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;IDI)I");
     assert(cbmeth);
+
+
+    jobject inbuf = NULL;
+    jobject outbuf = NULL;
+    if (outputBuffer != NULL) {
+        inbuf = jenv->NewDirectByteBuffer(inputBuffer, nFrames);
+    }
+    if (inputBuffer != NULL) {
+        outbuf = jenv->NewDirectByteBuffer(outputBuffer, nFrames);
+    }
 
 //    const jbyteArray jinputbuf = jenv->NewByteArray( nFrames);
 //    jenv->SetByteArrayRegion( jinputbuf, 0, nFrames, (jbyte*)inputBuffer);
@@ -286,10 +298,19 @@ static int java_callback(void *outputBuffer, void *inputBuffer,
     const jint jstatus = status;
 
     //TODO: we want to handle IO with NIO buffers
-    const jint jret = jenv->CallIntMethod( obj, cbmeth,NULL, NULL, jbufsize, jstreamtime, jstatus);
-//    jenv->DeleteLocalRef( jinputbuf);
-//    jenv->DeleteLocalRef( joutputbuf);
+    const jint jret = jenv->CallIntMethod( obj, cbmeth,outbuf, inbuf, jbufsize, jstreamtime, jstatus);
+
+
+    if(inbuf != NULL) {
+        jenv->DeleteLocalRef(inbuf);
+    }
+    if(outbuf != NULL) {
+        jenv->DeleteLocalRef(outbuf);
+    }
+
     jenv->DeleteLocalRef( cbintf);
+
+
 
     return jret;
 
