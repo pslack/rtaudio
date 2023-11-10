@@ -277,7 +277,6 @@ static int java_callback(void *outputBuffer, void *inputBuffer,
     const jmethodID cbmeth = jenv->GetMethodID( cbintf, "callback", "(Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;IDI)I");
     assert(cbmeth);
 
-
     jobject inbuf = NULL;
     jobject outbuf = NULL;
     if (outputBuffer != NULL) {
@@ -286,12 +285,6 @@ static int java_callback(void *outputBuffer, void *inputBuffer,
     if (inputBuffer != NULL) {
         outbuf = jenv->NewDirectByteBuffer(outputBuffer, nFrames);
     }
-
-//    const jbyteArray jinputbuf = jenv->NewByteArray( nFrames);
-//    jenv->SetByteArrayRegion( jinputbuf, 0, nFrames, (jbyte*)inputBuffer);
-//
-//    const jbyteArray joutputbuf = jenv->NewByteArray( nFrames);
-//    jenv->SetByteArrayRegion(joutputbuf, 0, nFrames, (jbyte*)outputBuffer);
 
     const jint jbufsize = nFrames;
     const jdouble jstreamtime = streamTime;
