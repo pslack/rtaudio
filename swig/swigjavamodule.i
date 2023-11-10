@@ -279,6 +279,8 @@ static int java_callback(void *outputBuffer, void *inputBuffer,
 
     jobject inbuf = NULL;
     jobject outbuf = NULL;
+
+    // todo make sizes of bytebuffer match the format and channels etc
     if (outputBuffer != NULL) {
         inbuf = jenv->NewDirectByteBuffer(inputBuffer, nFrames);
     }
@@ -290,9 +292,7 @@ static int java_callback(void *outputBuffer, void *inputBuffer,
     const jdouble jstreamtime = streamTime;
     const jint jstatus = status;
 
-    //TODO: we want to handle IO with NIO buffers
     const jint jret = jenv->CallIntMethod( obj, cbmeth,outbuf, inbuf, jbufsize, jstreamtime, jstatus);
-
 
     if(inbuf != NULL) {
         jenv->DeleteLocalRef(inbuf);
