@@ -34,8 +34,7 @@ String prod = System.getProperty("jlauncher.library.path");
 String lib = "rtaudiojava";
 String os = System.getProperty("os.name");
 
-if (prod != null) {
-    String path = System.getProperty("jlauncher.library.path");
+
 
 
 if (prod != null) {
@@ -55,6 +54,7 @@ lib = lib + ".dll";
     lib = lib + ".so";
 }
 
+
     lib = path + File.separator + lib;
     System.out.println("loading library: " + lib);
     System.load(lib);
@@ -68,7 +68,6 @@ lib = lib + ".dll";
             System.exit(1);
         }
     }
-
 }
 
 private static boolean librariesLoaded = false;
@@ -281,6 +280,9 @@ static int java_callback(void *outputBuffer, void *inputBuffer,
 
     jobject inbuf = NULL;
     jobject outbuf = NULL;
+
+
+    // todo make sizes of bytebuffer match the format and channels etc
     if (outputBuffer != NULL) {
         inbuf = jenv->NewDirectByteBuffer(inputBuffer, nFrames);
     }
@@ -292,9 +294,7 @@ static int java_callback(void *outputBuffer, void *inputBuffer,
     const jdouble jstreamtime = streamTime;
     const jint jstatus = status;
 
-    //TODO: we want to handle IO with NIO buffers
     const jint jret = jenv->CallIntMethod( obj, cbmeth,outbuf, inbuf, jbufsize, jstreamtime, jstatus);
-
 
     if(inbuf != NULL) {
         jenv->DeleteLocalRef(inbuf);
