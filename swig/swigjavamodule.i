@@ -1,6 +1,303 @@
 %module(directors="1") RtAudioAPI
 %{
 #include "RtAudio.h"
+#include <string>
+#include <vector>
+#include <map>
+#include <assert.h>
+#include <memory>
+#include "swigstructs.h"
+
+class RtAudioCallbackWrapper;
+
+// NEW: global variables (bleurgh!)
+static jobject obj;
+static JavaVM *jvm;
+static RtAudioCallback  cb = 0;
+std::map<int,std::shared_ptr<RtAudioCallbackWrapper>> callbacks = {};
+std::map<int,std::function<int( void *outputBuffer, void *inputBuffer,
+                               unsigned int nFrames,
+                               double streamTime,
+                               RtAudioStreamStatus status,
+                               void *userData )>> functors;
+
+std::vector<std::shared_ptr<CallbackUserDataStruct>> callbackUserDataStructs;
+
+
+
+void * getCallbackUserDataStruct(int index, int nInputChannels, int nOutputChannels, long format, bool interleaved) {
+
+    // let's manage the memory for this new pointer keep it alive until the end of the program
+    std::shared_ptr<CallbackUserDataStruct> cbDataptr = std::make_shared<CallbackUserDataStruct>();
+    callbackUserDataStructs.push_back(cbDataptr);
+
+    CallbackUserDataStruct * cbData = cbDataptr.get();
+
+    cbData->index = index;
+    cbData->nInputChannels = nInputChannels;
+    cbData->nOutputChannels = nOutputChannels;
+    cbData->format = format;
+    cbData->interleaved = interleaved;
+    return cbData;
+}
+
+/*
+ This function returns the current thread attached to the jni
+ it will return null if unsuccessful otherwise it returns the envinronment
+ The caller is responsible for detaching the thread
+ */
+static JNIEnv * attachJNIThread()
+{
+    JNIEnv* env;
+
+    if (jvm != NULL) {
+
+        if (jvm->AttachCurrentThread((void**)&env, NULL)<0){
+            return (JNIEnv *) NULL;
+        } else {
+            return env;
+        }
+
+    }else{
+
+        return (JNIEnv *) NULL;
+
+    }
+}
+
+// we will use user data to index into an array of function pointers to class instances
+// create a user dat astruct that has the index into the array of function pointers, the number of input and output channels, the format size and boolean if interleaved
+
+
+class RtAudioCallbackWrapper {
+        public:
+        RtAudioCallbackWrapper(jobject javaCallback) {
+            JNIEnv *jenv = attachJNIThread();
+            assert(jenv != NULL);
+
+            javaCallbackObject = javaCallback;
+            std::cout << "RtAudioCallbackWrapper constructor called" << std::endl;
+
+            const jclass cbintf = jenv->GetObjectClass(javaCallback);
+            assert(cbintf != NULL);
+
+            jmethodID method = jenv->GetMethodID( cbintf, "getUserData", "()Lca/mcgill/rtaudio/api/RtAudioAPI$CallbackUserData;");
+                    //JCALL3(GetMethodID, jenv, cbintf, "getUserData", "()Lca/mcgill/rtaudio/api/RtAudioAPI$CallbackUserData;");
+            assert(method != NULL);
+
+// get the callbackInfo object
+            jobject callbackInfo = jenv->CallObjectMethod( javaCallback, method);
+                    //JCALL2(CallObjectMethod, jenv, obj, method);
+            assert (callbackInfo != NULL);
+
+            jclass callbackInfoClass = jenv->GetObjectClass(callbackInfo);
+            assert(callbackInfoClass != NULL);
+
+
+//get all the fields from the callbackInfo object described above
+
+            jfieldID indexf = jenv->GetFieldID( callbackInfoClass, "index", "I");
+                    //JCALL3(GetFieldID, jenv, callbackInfoClass, "index", "I");
+            jint index = jenv->GetIntField( callbackInfo, indexf);
+                    //JCALL2(GetIntField, jenv, callbackInfo, indexf);
+
+            jfieldID nInputChannelsf = jenv->GetFieldID( callbackInfoClass, "nInputChannels", "I");
+                    //JCALL3(GetFieldID, jenv, callbackInfoClass, "nInputChannels", "I");
+            jint nInputChannels = jenv->GetIntField( callbackInfo, nInputChannelsf);
+
+                    //JCALL2(GetIntField, jenv, callbackInfo, nInputChannelsf);
+
+            jfieldID nOutputChannelsf = jenv->GetFieldID( callbackInfoClass, "nOutputChannels", "I");
+                    //(GetFieldID, jenv, callbackInfoClass, "nOutputChannels", "I");
+            jint nOutputChannels = jenv->GetIntField( callbackInfo, nOutputChannelsf);
+                    //JCALL2(GetIntField, jenv, callbackInfo, nOutputChannelsf);
+
+
+            jfieldID formatf = jenv->GetFieldID( callbackInfoClass, "format", "I");
+                    //JCALL3(GetFieldID, jenv, callbackInfoClass, "format", "I");
+            jint format = jenv->GetIntField( callbackInfo, formatf);
+                    //JCALL2(GetIntField, jenv, callbackInfo, formatf);
+
+            jfieldID interleavedf = jenv->GetFieldID( callbackInfoClass, "interleaved", "Z");
+                    //JCALL3(GetFieldID, jenv, callbackInfoClass, "interleaved", "Z");
+            jboolean interleaved = jenv->GetBooleanField( callbackInfo, interleavedf);
+                    //JCALL2(GetBooleanField, jenv, callbackInfo, interleavedf);
+
+
+            this->index = index;
+            this->nInputChannels = nInputChannels;
+            this->nOutputChannels = nOutputChannels;
+            this->format = format;
+            this->interleaved = interleaved;
+
+            if ( format == RTAUDIO_SINT8 ) {
+                formatSize = 1;
+            }
+            if ( format == RTAUDIO_SINT16 ) {
+                formatSize = 2;
+            }
+            if ( format == RTAUDIO_SINT24 ) {
+                formatSize = 3;
+            }
+            if ( format == RTAUDIO_SINT32 ) {
+                formatSize = 4;
+            }
+            if ( format == RTAUDIO_FLOAT32 ) {
+                formatSize = 4;
+            }
+            if ( format == RTAUDIO_FLOAT64 ){
+                formatSize = 8;
+            }
+
+
+            cbmeth = jenv->GetMethodID( cbintf, "callback", "(Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;IDI)I");
+            assert(cbmeth);
+
+            jenv->DeleteLocalRef( cbintf);
+
+        }
+
+        ~RtAudioCallbackWrapper() {
+            std::cout << "RtAudioCallbackWrapper destructor called" << std::endl;
+
+
+        }
+
+        // standard copy constructor
+        RtAudioCallbackWrapper(const RtAudioCallbackWrapper& other) {
+            std::cout << "RtAudioCallbackWrapper copy constructor called" << std::endl;
+            javaCallbackObject = other.javaCallbackObject;
+        }
+
+        int javaCallback(void *outputBuffer, void *inputBuffer,unsigned int nFrames,double streamTime,
+        RtAudioStreamStatus status,void *userData) {
+
+            JNIEnv *jenv = attachJNIThread();
+            assert(jenv != NULL);
+
+            jobject inbuf = NULL;
+            jobject outbuf = NULL;
+
+            // todo make sizes of bytebuffer match the format and channels etc
+            if (outputBuffer != NULL) {
+                inbuf = jenv->NewDirectByteBuffer(inputBuffer, nFrames*formatSize*nInputChannels);
+            }
+            if (inputBuffer != NULL) {
+                outbuf = jenv->NewDirectByteBuffer(outputBuffer, nFrames*formatSize*nOutputChannels);
+            }
+
+            const jint jbufsize = nFrames;
+            const jdouble jstreamtime = streamTime;
+            const jint jstatus = status;
+
+            const jint jret = jenv->CallIntMethod( javaCallbackObject, cbmeth,outbuf, inbuf, jbufsize, jstreamtime, jstatus);
+
+            if(inbuf != NULL) {
+                jenv->DeleteLocalRef(inbuf);
+            }
+            if(outbuf != NULL) {
+                jenv->DeleteLocalRef(outbuf);
+            }
+
+            return jret;
+
+        }
+
+        private:
+        // the size related to the format requested
+        int formatSize;
+        int nInputChannels;
+        int nOutputChannels;
+        int format;
+        int index;
+        bool interleaved;
+        jmethodID cbmeth;
+        jobject javaCallbackObject;
+
+};
+
+
+void SetCallback(const RtAudioCallback SomeCallback) {
+    //TODO: we need to handle the case where the callback is already set
+    printf("Callback was set in the native code \n");
+
+    cb = SomeCallback;
+}
+
+// this is the function that all streams use as callback address
+// the userdata sets the index into the array of function pointers
+
+static int java_callback(void *outputBuffer, void *inputBuffer,
+                         unsigned int nFrames,
+                         double streamTime,
+                         RtAudioStreamStatus status,
+                         void *userData) {
+
+   // first cast user data to a callbackUserData struct
+    CallbackUserDataStruct* cbData = (CallbackUserDataStruct*)userData;
+    // check tht the struct is actually valid
+    if(cbData == NULL) {
+        // return a stream error abort the stream immediately
+        return 2;
+    }
+    // get the index into the array of function pointers
+    int index = cbData->index;
+    // get the function pointer from the array
+    std::function<int( void *outputBuffer, void *inputBuffer,
+                       unsigned int nFrames,
+                       double streamTime,
+                       RtAudioStreamStatus status,
+                       void *userData )> func = functors[index];
+    // che3ck that the function pointer is valid
+   if(func != NULL){
+       // call the function pointer
+       return func(outputBuffer, inputBuffer, nFrames, streamTime, status, userData);
+   } else {
+       // return a stream error abort the stream immediately
+
+       return 2;
+   }
+
+//    JNIEnv *jenv = attachJNIThread();
+//    assert(jenv != NULL);
+//    const jclass cbintf = jenv->GetObjectClass(obj);    // get the class of the object
+//    assert(cbintf);
+//
+//    const jmethodID cbmeth = jenv->GetMethodID( cbintf, "callback", "(Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;IDI)I");
+//    assert(cbmeth);
+//
+//    jobject inbuf = NULL;
+//    jobject outbuf = NULL;
+//
+//
+//    // todo make sizes of bytebuffer match the format and channels etc
+//    if (outputBuffer != NULL) {
+//        inbuf = jenv->NewDirectByteBuffer(inputBuffer, nFrames);
+//    }
+//    if (inputBuffer != NULL) {
+//        outbuf = jenv->NewDirectByteBuffer(outputBuffer, nFrames);
+//    }
+//
+//    const jint jbufsize = nFrames;
+//    const jdouble jstreamtime = streamTime;
+//    const jint jstatus = status;
+//
+//    const jint jret = jenv->CallIntMethod( obj, cbmeth,outbuf, inbuf, jbufsize, jstreamtime, jstatus);
+//
+//    if(inbuf != NULL) {
+//        jenv->DeleteLocalRef(inbuf);
+//    }
+//    if(outbuf != NULL) {
+//        jenv->DeleteLocalRef(outbuf);
+//    }
+//
+//    jenv->DeleteLocalRef( cbintf);
+//
+//    return jret;
+
+}
+
+
 %}
 
 %pragma(java) jniclassimports=%{
@@ -21,6 +318,8 @@ import java.nio.ByteBuffer;
 %}
 
 %pragma(java) jniclasscode=%{
+
+
 static {
     // get system property for jlauncher to see if we are in a production mode
 // if so, we need to load the libraries from a full path because of
@@ -198,120 +497,41 @@ public static void loadLibraryFromJar(String path) throws IOException {
 }
 %}
 
+
 %pragma(java) modulecode=%{
+
+   public static class CallbackUserData {
+    public CallbackUserData() {
+    }
+    public int index;
+    public int nInputChannels;
+    public int nOutputChannels;
+    public int format;
+    public boolean interleaved;
+   }
+
     public interface RtAudioCallBackInterface {
         public int callback(java.nio.ByteBuffer outbuffer, java.nio.ByteBuffer inbuffer, int buffer_size, double stream_time, int status);
+        // user to provide callback data structure in order to provide information for bytebuffering
+        public CallbackUserData getUserData();
     }
+
     %}
 
 %include <cpointer.i>
-%pointer_functions(unsigned int, UnsignedIntPtr);
-
-
-//%include <carrays.i>
-//%array_functions(float, floatArray);
 
 %include <std_string.i>
-#include <string>
-
 %include <stdint.i>
 %include <typemaps.i>
-
 %include <std_vector.i>
-#include <vector>
+
 namespace std {
         %template(vuint) vector<unsigned int>;
         %template(vstring) vector<string>;
 };
 
-%{
-#include <assert.h>
+%pointer_functions(unsigned int, UnsignedIntPtr);
 
-// NEW: global variables (bleurgh!)
-static jobject obj;
-static JavaVM *jvm;
-static RtAudioCallback  cb = 0;
-
-/*
- This function returns the current thread attached to the jni
- it will return null if unsuccessful otherwise it returns the envinronment
- The caller is responsible for detaching the thread
- */
-static JNIEnv * attachJNIThread()
-{
-    JNIEnv* env;
-
-    if (jvm != NULL) {
-
-        if (jvm->AttachCurrentThread((void**)&env, NULL)<0){
-            return (JNIEnv *) NULL;
-        } else {
-            return env;
-        }
-
-    }else{
-
-        return (JNIEnv *) NULL;
-
-    }
-}
-
-void SetCallback(const RtAudioCallback SomeCallback) {
-    //TODO: we need to handle the case where the callback is already set
-    printf("Callback was set in the native code \n");
-
-    cb = SomeCallback;
-}
-
-// 2:
-static int java_callback(void *outputBuffer, void *inputBuffer,
-                         unsigned int nFrames,
-                         double streamTime,
-                         RtAudioStreamStatus status,
-                         void *userData) {
-
-    JNIEnv *jenv = attachJNIThread();
-    assert(jenv != NULL);
-    const jclass cbintf = jenv->GetObjectClass(obj);    // get the class of the object
-    assert(cbintf);
-
-    const jmethodID cbmeth = jenv->GetMethodID( cbintf, "callback", "(Ljava/nio/ByteBuffer;Ljava/nio/ByteBuffer;IDI)I");
-    assert(cbmeth);
-
-    jobject inbuf = NULL;
-    jobject outbuf = NULL;
-
-
-    // todo make sizes of bytebuffer match the format and channels etc
-    if (outputBuffer != NULL) {
-        inbuf = jenv->NewDirectByteBuffer(inputBuffer, nFrames);
-    }
-    if (inputBuffer != NULL) {
-        outbuf = jenv->NewDirectByteBuffer(outputBuffer, nFrames);
-    }
-
-    const jint jbufsize = nFrames;
-    const jdouble jstreamtime = streamTime;
-    const jint jstatus = status;
-
-    const jint jret = jenv->CallIntMethod( obj, cbmeth,outbuf, inbuf, jbufsize, jstreamtime, jstatus);
-
-    if(inbuf != NULL) {
-        jenv->DeleteLocalRef(inbuf);
-    }
-    if(outbuf != NULL) {
-        jenv->DeleteLocalRef(outbuf);
-    }
-
-    jenv->DeleteLocalRef( cbintf);
-
-
-
-    return jret;
-
-}
-
-    %}
 
 // 3:
 %typemap(jstype) RtAudioCallback "RtAudioAPI.RtAudioCallBackInterface";
@@ -324,10 +544,59 @@ static int java_callback(void *outputBuffer, void *inputBuffer,
 JCALL1(GetJavaVM, jenv, &jvm);
 obj = JCALL1(NewGlobalRef, jenv, $input);
 JCALL1(DeleteLocalRef, jenv, $input);
+
+// extract the callbackInfo from the obj provided
+// obj is RtAudioAPI.RtAudioCallBackInterface
+// we need to get the callbackInfo from the object
+// get the method getCallbackInfo
+// get the class of the object
+const jclass cbintf = jenv->GetObjectClass(obj);
+assert(cbintf != NULL);
+
+jmethodID method = JCALL3(GetMethodID, jenv, cbintf, "getUserData", "()Lca/mcgill/rtaudio/api/RtAudioAPI$CallbackUserData;");
+assert(method != NULL);
+
+// get the callbackInfo object
+jobject callbackInfo = JCALL2(CallObjectMethod, jenv, obj, method);
+assert (callbackInfo != NULL);
+
+jclass callbackInfoClass = jenv->GetObjectClass(callbackInfo);
+assert(callbackInfoClass != NULL);
+
+//public int index;
+//public int nInputChannels;
+//public int nOutputChannels;
+//public int format;
+//public boolean interleaved;
+
+//get all the fields from the callbackInfo object described above
+
+jfieldID indexf = JCALL3(GetFieldID, jenv, callbackInfoClass, "index", "I");
+jint index = JCALL2(GetIntField, jenv, callbackInfo, indexf);
+
+
+// create a new wrapper object and add it to vector of std pointers
+std::shared_ptr< RtAudioCallbackWrapper > wrapper(new RtAudioCallbackWrapper(obj));
+callbacks[index]=wrapper;
+
+
+functors[index] = ([index](void *outputBuffer, void *inputBuffer,
+                                   unsigned int nFrames,
+                                   double streamTime,
+                                   RtAudioStreamStatus status,
+                                   void *userData) {
+    return (callbacks[index].get()->javaCallback(outputBuffer, inputBuffer, nFrames, streamTime, status, userData));
+});
+
+//$1 = std::bind(test, wrapper, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6);
+//}
 $1 = java_callback;
+//$1=*functors.back().target<RtAudioCallback>();
+
 }
 
-//%apply unsigned int *INOUT {unsigned int *x};
-
 %include "../RtAudio.h"
-void SetCallback(const RtAudioCallback SomeCallback);
+%include "swigstructs.h"
+
+
+

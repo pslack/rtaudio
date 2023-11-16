@@ -91,7 +91,12 @@ swig_add_library(rtaudiojava TYPE SHARED LANGUAGE java
         SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/swig/swigjavamodule.i"
         )
 
-target_include_directories(rtaudiojava PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/include" ${JNI_INCLUDE_DIRS})
+target_include_directories(rtaudiojava PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/swig"
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+        ${JNI_INCLUDE_DIRS}
+        )
 swig_link_libraries(rtaudiojava PUBLIC rtaudio)
 
 add_custom_command(TARGET rtaudiojava POST_BUILD
