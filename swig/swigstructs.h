@@ -14,7 +14,9 @@ struct CallbackUserDataStruct {
 
 };
 
-void * getCallbackUserDataStruct(int index, int nInputChannels, int nOutputChannels, long format, bool interleaved);
+void* getCallbackUserDataStruct(int index, int nInputChannels, int nOutputChannels, long format, bool interleaved);
+
+void* convertSwigCptr(long long cptr);
 
 
 #endif //RTAUDIO_SWIGSTRUCTS_H
