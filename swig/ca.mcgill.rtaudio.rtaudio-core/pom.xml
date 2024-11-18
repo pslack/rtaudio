@@ -57,7 +57,7 @@
                             <storepass>${gnarly.keystore.password}</storepass>
                             <arguments>
                                 <argument>-tsa</argument>
-                                <argument>http://sha256timestamp.ws.symantec.com/sha256/timestamp</argument>
+                                <argument>${gnarly.tsa}</argument>
                             </arguments>
                         </configuration>
                     </execution>

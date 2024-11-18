@@ -99,6 +99,15 @@ target_include_directories(rtaudiojava PRIVATE
         )
 swig_link_libraries(rtaudiojava PUBLIC rtaudio)
 
+add_executable(local_libs_test swig/LocalizeJNILib.cpp)
+add_dependencies(rtaudiojava local_libs_test)
+
+add_custom_command(TARGET rtaudiojava POST_BUILD
+        COMMAND local_libs_test $<TARGET_FILE:rtaudiojava>
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "localizing library"
+)
+
 add_custom_command(TARGET rtaudiojava POST_BUILD
         COMMAND mvn clean install -Dcmake.binary.build.dir=${CMAKE_CURRENT_BINARY_DIR} -Dcmake.build.type=${CMAKE_BUILD_TYPE}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
