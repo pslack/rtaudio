@@ -22,7 +22,7 @@
             <id>mac-X86_64</id>
             <activation>
                 <os>
-                    <family>mac</family>
+                    <name>mac os x</name>
                     <arch>x86_64</arch>
                 </os>
             </activation>
@@ -33,13 +33,29 @@
                 <module>swig/ca.mcgill.rtaudio.nativelibraries/mac/X86_64</module>
                 <module>swig/ca.mcgill.rtaudio.rtaudio-core</module>
             </modules>
-
-
         </profile>
+        <profile>
+            <id>mac-aarch64</id>
+            <activation>
+                <os>
+                    <name>mac os x</name>
+                    <arch>aarch64</arch>
+                </os>
+            </activation>
+            <properties>
+
+            </properties>
+            <modules>
+                <module>swig/ca.mcgill.rtaudio.nativelibraries/mac/aarch64</module>
+                <module>swig/ca.mcgill.rtaudio.rtaudio-core</module>
+            </modules>
+        </profile>
+
         <profile>
             <id>linux-X86_64</id>
             <activation>
                 <os>
+                    <name>linux</name>
                     <family>unix</family>
                     <arch>x86_64</arch>
                 </os>

@@ -1,4 +1,6 @@
 %module(directors="1") RtAudioAPI
+%include <stdint.i>
+
 %{
 #include "RtAudio.h"
 #include <string>
@@ -494,6 +496,13 @@ namespace std {
 
 %pointer_functions(unsigned int, UnsignedIntPtr);
 
+//%typemap(jni) void* userData "jlong"
+//%typemap(jtype) void* userData "long"
+//%typemap(jstype) void* userData "long"
+////// Typemap for jobject as void*
+//%typemap(jni) jobject "jobject"
+//%typemap(jtype) jobject "Object"
+//%typemap(jstype) jobject "Object"
 
 // 3:
 %typemap(jstype) RtAudioCallback "RtAudioAPI.RtAudioCallBackInterface";
