@@ -7,16 +7,14 @@
 
 struct CallbackUserDataStruct {
     int index;
-    int nInputChannels;
-    int nOutputChannels;
-    long format;
-    bool interleaved;
-
+    jobject object;
 };
 
-void* getCallbackUserDataStruct(int index, int nInputChannels, int nOutputChannels, long format, bool interleaved);
 
 void* convertSwigCptr(long long cptr);
+
+void *getCallbackUserDataStruct(int index);
+
 
 
 #endif //RTAUDIO_SWIGSTRUCTS_H
