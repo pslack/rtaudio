@@ -124,6 +124,28 @@ static JNIEnv * attachJNIThread()
 class RtAudioCallbackWrapper{
         public:
         RtAudioCallbackWrapper(jobject javaCallback) {
+
+            formatSize = 0;
+            nInputChannels = 0;
+            nOutputChannels = 0;
+            format = 0;
+            index = 0;
+            interleaved = true;
+            cbmeth = NULL;
+            outputBufferSize = 0;
+            inputBufferSize = 0;
+
+            bufferSize = 0;
+            myInputBuffer = nullptr;
+            myOutputBuffer = nullptr;
+
+            inbuf = NULL;  // Now a member variable
+            outbuf = NULL; // Now a member variable
+            byteOrder = NULL;
+            javaCallbackObject = NULL;
+
+
+
             JNIEnv *jenv = getJNIEnv();
             if(jenv == nullptr) {
                 std::cout<<"Could not get JNIEnv"<<std::endl;
@@ -311,7 +333,7 @@ class RtAudioCallbackWrapper{
             std::cout << "inputBufferSize: " << inputBufferSize << std::endl;
 
             if (outputBufferSize > 0) {
-                myOutputBuffer = malloc(outputBufferSize);
+                myOutputBuffer = std::malloc(outputBufferSize);
                 if(myOutputBuffer == NULL) {
                     std::cout << "Could not create output buffer" << std::endl;
                 } else {
@@ -344,7 +366,7 @@ class RtAudioCallbackWrapper{
 
             }
             if (inputBufferSize > 0) {
-                myInputBuffer = malloc(inputBufferSize);
+                myInputBuffer = std::malloc(inputBufferSize);
                 if(myInputBuffer == NULL) {
                     std::cout << "Could not create input buffer" << std::endl;
                 } else {
@@ -392,11 +414,11 @@ class RtAudioCallbackWrapper{
 
 
             if (myInputBuffer != nullptr) {
-                free(myInputBuffer);
+                std::free(myInputBuffer);
                 myInputBuffer = nullptr;
             }
             if (myOutputBuffer != nullptr) {
-                free(myOutputBuffer);
+                std::free(myOutputBuffer);
                 myOutputBuffer = nullptr;
             }
 
@@ -428,8 +450,8 @@ class RtAudioCallbackWrapper{
                 //std::cout << "framesize mismatch : " << nFrames << "  original :" << this->bufferSize << std::endl;
                 if (outputBuffer != nullptr && outputBufferSize != 0) {
                     jenv->DeleteGlobalRef(outbuf);
-                    free(myOutputBuffer);
-                    myOutputBuffer = malloc(nFrames * formatSize * nOutputChannels);
+                    std::free(myOutputBuffer);
+                    myOutputBuffer = std::malloc(nFrames * formatSize * nOutputChannels);
                     if (myOutputBuffer == NULL) {
                         std::cerr << "Could not allocate output buffer" << std::endl;
                     } else {
@@ -443,8 +465,8 @@ class RtAudioCallbackWrapper{
                 }
                 if (inputBuffer != nullptr && inputBufferSize != 0) {
                     jenv->DeleteGlobalRef(inbuf);
-                    free(myInputBuffer);
-                    myInputBuffer = malloc(nFrames * formatSize * nInputChannels);
+                    std::free(myInputBuffer);
+                    myInputBuffer = std::malloc(nFrames * formatSize * nInputChannels);
                     if (myInputBuffer == NULL) {
                         std::cerr << "Could not allocate input buffer" << std::endl;
                     } else {
