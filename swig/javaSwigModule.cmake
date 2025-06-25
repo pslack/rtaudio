@@ -80,7 +80,7 @@ set(JAVA_PROJECT_VERSION "${PROJECT_VERSION}-SNAPSHOT")
 message("Java project version: ${JAVA_PROJECT_VERSION}")
 set(JAVA_ARTIFACT_DIR "${CMAKE_BINARY_DIR}/java_artifacts")
 set(JAVA_CORE_JAR_DEST "${JAVA_ARTIFACT_DIR}/rtaudio-core.jar")
-set(JAVA_CORE_JAR_SOURCE "${PROJECT_SOURCE_DIR}/ca.mcgill.rtaudio.rtaudio-core/target/medimuse-core-${JAVA_PROJECT_VERSION}.jar")
+set(JAVA_CORE_JAR_SOURCE "${PROJECT_SOURCE_DIR}/swig/ca.mcgill.rtaudio.rtaudio-core/target/rtaudio-core-${JAVA_PROJECT_VERSION}.jar")
 
 add_custom_command(
         OUTPUT  ${JAVA_CORE_JAR_DEST}
@@ -91,9 +91,9 @@ add_custom_command(
         COMMAND ${CMAKE_COMMAND} -E echo "--- [DEBUG] Starting Java Packaging..." &&
         ${Maven_EXECUTABLE} -f "${PROJECT_SOURCE_DIR}/pom.xml" clean install -Drtaudio.native.library.path=$<TARGET_FILE_DIR:rtaudio> -Dcmake.binary.build.dir=${CMAKE_BINARY_DIR} &&
         ${CMAKE_COMMAND} -E echo "--- [DEBUG] Maven finished. Verifying source JAR..." &&
-        #${CMAKE_COMMAND} -E echo "--- [DEBUG] Preparing to copy..." &&
-        #${CMAKE_COMMAND} -E make_directory "${JAVA_ARTIFACT_DIR}" &&
-        #${CMAKE_COMMAND} -E copy "${JAVA_CORE_JAR_SOURCE}" "${JAVA_CORE_JAR_DEST}" &&
+        ${CMAKE_COMMAND} -E echo "--- [DEBUG] Preparing to copy..." &&
+        ${CMAKE_COMMAND} -E make_directory "${JAVA_ARTIFACT_DIR}" &&
+        ${CMAKE_COMMAND} -E copy "${JAVA_CORE_JAR_SOURCE}" "${JAVA_CORE_JAR_DEST}" &&
         ${CMAKE_COMMAND} -E echo "--- [DEBUG]  finished. ..."
 
 
@@ -102,7 +102,7 @@ add_custom_command(
         # VERBATIM is important to make sure CMake passes the && characters correctly.
         VERBATIM
 )
-add_custom_target(java_package DEPENDS ${JAVA_CORE_JAR_DEST} )
+add_custom_target(java_package_rtaudio DEPENDS ${JAVA_CORE_JAR_DEST} )
 
 #add_custom_command(TARGET rtaudiojava POST_BUILD
 #        COMMAND mvn clean install -Dcmake.binary.build.dir=${CMAKE_CURRENT_BINARY_DIR} -Dcmake.build.type=${CMAKE_BUILD_TYPE} -Dcmake.translate=${RT_BT}
