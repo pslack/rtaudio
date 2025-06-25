@@ -6,7 +6,7 @@
 %include <typemaps.i>
 %include <std_vector.i>
 
-
+%ignore CallbackInfo;
 
 %{
 #include "RtAudio.h"
