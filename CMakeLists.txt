@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 
 # Define a C++ project.
-project(RtAudio LANGUAGES CXX)
+project(RtAudio LANGUAGES CXX VERSION 8.0.0)
 
 # standards version
 set(CMAKE_CXX_STANDARD 17)

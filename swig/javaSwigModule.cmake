@@ -2,45 +2,9 @@ set(DOCUMENTATION "This module generates java wrappers using swig ")
 
 message("Hello from java swig module")
 
-set(DARWIN 0)
-set(LINUX 0)
-set(WINDOWS 0)
-set (IOS 0)
-
-if(ANDROID)
-    message("Android is active")
-endif(ANDROID)
-
-if(${CMAKE_SYSTEM_NAME} STREQUAL "iOS")
-    set(IOS 1)
-    message("iOS is active")
-endif(${CMAKE_SYSTEM_NAME} STREQUAL "iOS")
-
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-    set(LINUX 1)
-    message("Linux is active")
-endif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-    set(WINDOWS 1)
-    message("WINDOWS is active")
-endif(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-
-if(ANDROID)
-    message("ANDROID is active")
-endif(ANDROID)
-
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
-    set(DARWIN 1)
-    message("DARWIN is active")
-endif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
-
-message("cmake build type is set to ${CMAKE_BUILD_TYPE}" )
-message("cmake binary dir set to ${CMAKE_CURRENT_BINARY_DIR}")
-message("build folder is set to $ENV{BUILD_FOLDER}")
 
 # semantics to find our java
-if(DARWIN)
+if(APPLE)
     message("DARWIN is active")
     execute_process(COMMAND /usr/libexec/java_home OUTPUT_VARIABLE JAVA_HOME_DEFAULT OUTPUT_STRIP_TRAILING_WHITESPACE)
 
@@ -48,7 +12,7 @@ if(DARWIN)
     set(JAVA_INCLUDE_PATH ${JAVA_HOME_DEFAULT}/include CACHE PATH "Java include directory")
     set(JAVA_INCLUDE_PATH2 ${JAVA_HOME_DEFAULT}/include/darwin CACHE PATH "Java include directory2")
     set(JAVA_AWT_INCLUDE_PATH ${JAVA_INCLUDE_PATH} CACHE PATH "Java awt include directory")
-endif(DARWIN)
+endif(APPLE)
 
 
 find_package(JNI REQUIRED)
@@ -62,10 +26,6 @@ else()
 endif()
 
 
-
-
-
-
 cmake_policy(SET CMP0078 NEW)
 cmake_policy(SET CMP0086 NEW)
 find_package(SWIG REQUIRED)
@@ -77,6 +37,12 @@ if(SWIG_FOUND)
     message("SWIG ver  : ${SWIG_VERSION}")
 
 endif()
+
+find_program(Maven_EXECUTABLE REQUIRED NAMES mvn)
+if(NOT Maven_EXECUTABLE)
+    message(FATAL_ERROR "Could not find 'mvn' executable...")
+endif()
+
 
 set_property(SOURCE swig/swigjavamodule.i PROPERTY CPLUSPLUS ON)
 set_property(SOURCE swig/swigjavamodule.i PROPERTY COMPILE_OPTIONS
@@ -99,19 +65,49 @@ target_include_directories(rtaudiojava PRIVATE
         )
 swig_link_libraries(rtaudiojava PUBLIC rtaudio)
 
-add_executable(local_libs_test swig/LocalizeJNILib.cpp)
-add_dependencies(rtaudiojava local_libs_test)
+#add_executable(local_libs_test swig/LocalizeJNILib.cpp)
+#add_dependencies(rtaudiojava local_libs_test)
 
-add_custom_command(TARGET rtaudiojava POST_BUILD
-        COMMAND local_libs_test $<TARGET_FILE:rtaudiojava>
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-        COMMENT "localizing library"
+#figure out where our final binaries are and set that for maven build
+# if compiler is xcode or visual studio, set the output folder
+#if(CMAKE_GENERATOR STREQUAL "Xcode" OR CMAKE_GENERATOR STREQUAL "Visual Studio")
+#    set(RT_BT ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE} )
+#else()
+#    set(RT_BT ${CMAKE_CURRENT_BINARY_DIR})
+#endif()
+#todo: switch based on release etc.
+set(JAVA_PROJECT_VERSION "${PROJECT_VERSION}-SNAPSHOT")
+message("Java project version: ${JAVA_PROJECT_VERSION}")
+set(JAVA_ARTIFACT_DIR "${CMAKE_BINARY_DIR}/java_artifacts")
+set(JAVA_CORE_JAR_DEST "${JAVA_ARTIFACT_DIR}/rtaudio-core.jar")
+set(JAVA_CORE_JAR_SOURCE "${PROJECT_SOURCE_DIR}/ca.mcgill.rtaudio.rtaudio-core/target/medimuse-core-${JAVA_PROJECT_VERSION}.jar")
+
+add_custom_command(
+        OUTPUT  ${JAVA_CORE_JAR_DEST}
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        # We combine all steps into a single command, run by the Windows command processor.
+        # cmd /c "..." => Run the following sequence and then exit.
+        # && => If the previous command succeeded, run the next one.
+        COMMAND ${CMAKE_COMMAND} -E echo "--- [DEBUG] Starting Java Packaging..." &&
+        ${Maven_EXECUTABLE} -f "${PROJECT_SOURCE_DIR}/pom.xml" clean install -Drtaudio.native.library.path=$<TARGET_FILE_DIR:rtaudio> -Dcmake.binary.build.dir=${CMAKE_BINARY_DIR} &&
+        ${CMAKE_COMMAND} -E echo "--- [DEBUG] Maven finished. Verifying source JAR..." &&
+        #${CMAKE_COMMAND} -E echo "--- [DEBUG] Preparing to copy..." &&
+        #${CMAKE_COMMAND} -E make_directory "${JAVA_ARTIFACT_DIR}" &&
+        #${CMAKE_COMMAND} -E copy "${JAVA_CORE_JAR_SOURCE}" "${JAVA_CORE_JAR_DEST}" &&
+        ${CMAKE_COMMAND} -E echo "--- [DEBUG]  finished. ..."
+
+
+        DEPENDS rtaudiojava
+        COMMENT "Packaging Java artifacts with Maven and collecting results..."
+        # VERBATIM is important to make sure CMake passes the && characters correctly.
+        VERBATIM
 )
+add_custom_target(java_package DEPENDS ${JAVA_CORE_JAR_DEST} )
 
-add_custom_command(TARGET rtaudiojava POST_BUILD
-        COMMAND mvn clean install -Dcmake.binary.build.dir=${CMAKE_CURRENT_BINARY_DIR} -Dcmake.build.type=${CMAKE_BUILD_TYPE}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        COMMENT "Building artifacts"
-        )
+#add_custom_command(TARGET rtaudiojava POST_BUILD
+#        COMMAND mvn clean install -Dcmake.binary.build.dir=${CMAKE_CURRENT_BINARY_DIR} -Dcmake.build.type=${CMAKE_BUILD_TYPE} -Dcmake.translate=${RT_BT}
+#        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+#        COMMENT "Building artifacts"
+#)
 
 
