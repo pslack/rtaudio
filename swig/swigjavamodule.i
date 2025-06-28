@@ -440,13 +440,13 @@ class RtAudioCallbackWrapper{
             jlong joutputBuffer = reinterpret_cast<jlong>(outputBuffer);
             jlong jinputBuffer = reinterpret_cast<jlong>(inputBuffer);
             jint jret;
-            struct CallbackUserDataStruct *cbData = (struct CallbackUserDataStruct *)userData;
+//            struct CallbackUserDataStruct *cbData = (struct CallbackUserDataStruct *)userData;
 
 //            std::cout << "javaCallback called frm : " << nFrames << "  outbuf "  << outputBuffer << " inbuf " << inputBuffer
 //            << "nouts " << nOutputChannels << " nins " << nInputChannels << std::endl;
             std::lock_guard<std::mutex> lock(bufferMutex);
 
-            if (this->bufferSize != nFrames) {
+            if (this->bufferSize != (int) nFrames) {
                 //std::cout << "framesize mismatch : " << nFrames << "  original :" << this->bufferSize << std::endl;
                 if (outputBuffer != nullptr && outputBufferSize != 0) {
                     jenv->DeleteGlobalRef(outbuf);
