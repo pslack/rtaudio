@@ -16,7 +16,7 @@
 #include <assert.h>
 #include <memory>
 #include "swigstructs.h"
-
+#include <mutex>
 class RtAudioCallbackWrapper;
 
 // NEW: global variables (bleurgh!)
