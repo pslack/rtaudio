@@ -89,7 +89,7 @@ add_custom_command(
         # cmd /c "..." => Run the following sequence and then exit.
         # && => If the previous command succeeded, run the next one.
         COMMAND ${CMAKE_COMMAND} -E echo "--- [DEBUG] Starting Java Packaging..." &&
-        ${Maven_EXECUTABLE} -f "${PROJECT_SOURCE_DIR}/pom.xml" clean install -Drtaudio.native.library.path=$<TARGET_FILE_DIR:rtaudio> -Dcmake.binary.build.dir=${CMAKE_BINARY_DIR} &&
+        ${Maven_EXECUTABLE} -f "${PROJECT_SOURCE_DIR}/pom.xml" clean install -Drtaudio.native.library.path=$<TARGET_FILE_DIR:rtaudio> -Dcmake.binary.build.dir=${CMAKE_CURRENT_BINARY_DIR} &&
         ${CMAKE_COMMAND} -E echo "--- [DEBUG] Maven finished. Verifying source JAR..." &&
         ${CMAKE_COMMAND} -E echo "--- [DEBUG] Preparing to copy..." &&
         ${CMAKE_COMMAND} -E make_directory "${JAVA_ARTIFACT_DIR}" &&
