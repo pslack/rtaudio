@@ -15,7 +15,7 @@ if(APPLE)
 endif(APPLE)
 
 
-find_package(JNI REQUIRED)
+find_package(JNI REQUIRED COMPONENTS JVM)
 
 if (JNI_FOUND)
     message (STATUS "JNI_INCLUDE_DIRS=${JNI_INCLUDE_DIRS}")
@@ -75,8 +75,12 @@ swig_link_libraries(rtaudiojava PUBLIC rtaudio)
 #else()
 #    set(RT_BT ${CMAKE_CURRENT_BINARY_DIR})
 #endif()
-#todo: switch based on release etc.
-set(JAVA_PROJECT_VERSION "${PROJECT_VERSION}-SNAPSHOT")
+#if the build type is Debug then we add -SNAPSHOT suffix
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(JAVA_PROJECT_VERSION "${PROJECT_VERSION}-SNAPSHOT")
+else()
+    set(JAVA_PROJECT_VERSION "${PROJECT_VERSION}")
+endif()
 message("Java project version: ${JAVA_PROJECT_VERSION}")
 set(JAVA_ARTIFACT_DIR "${CMAKE_BINARY_DIR}/java_artifacts")
 set(JAVA_CORE_JAR_DEST "${JAVA_ARTIFACT_DIR}/rtaudio-core.jar")
@@ -85,16 +89,25 @@ set(JAVA_CORE_JAR_SOURCE "${PROJECT_SOURCE_DIR}/swig/ca.mcgill.rtaudio.rtaudio-c
 add_custom_command(
         OUTPUT  ${JAVA_CORE_JAR_DEST}
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        # We combine all steps into a single command, run by the Windows command processor.
-        # cmd /c "..." => Run the following sequence and then exit.
-        # && => If the previous command succeeded, run the next one.
-        COMMAND ${CMAKE_COMMAND} -E echo "--- [DEBUG] Starting Java Packaging..." &&
-        ${Maven_EXECUTABLE} -f "${PROJECT_SOURCE_DIR}/pom.xml" clean install -Drtaudio.native.library.path=$<TARGET_FILE_DIR:rtaudio> -Dcmake.binary.build.dir=${CMAKE_CURRENT_BINARY_DIR} &&
-        ${CMAKE_COMMAND} -E echo "--- [DEBUG] Maven finished. Verifying source JAR..." &&
-        ${CMAKE_COMMAND} -E echo "--- [DEBUG] Preparing to copy..." &&
-        ${CMAKE_COMMAND} -E make_directory "${JAVA_ARTIFACT_DIR}" &&
-        ${CMAKE_COMMAND} -E copy "${JAVA_CORE_JAR_SOURCE}" "${JAVA_CORE_JAR_DEST}" &&
-        ${CMAKE_COMMAND} -E echo "--- [DEBUG]  finished. ..."
+        COMMAND ${CMAKE_COMMAND} -E env
+        MAVENBUILD=TRUE
+        ${Maven_EXECUTABLE} versions:set "-DnewVersion=${JAVA_PROJECT_VERSION}" -DgenerateBackupPoms=false
+        COMMAND ${CMAKE_COMMAND} -E echo "--- [DEBUG] Starting Java Packaging..."
+        COMMAND ${CMAKE_COMMAND} -E env
+        MAVENBUILD=TRUE
+        ${Maven_EXECUTABLE} -f "${PROJECT_SOURCE_DIR}/pom.xml" clean install
+        -Drtaudio.native.library.path=$<TARGET_FILE_DIR:rtaudio>
+        -Dcmake.binary.build.dir=${CMAKE_CURRENT_BINARY_DIR}
+        -Dgnarly.keystore.path=$ENV{GNARLY_KEYSTORE_PATH}
+        -Dkeystore.type=$ENV{KEYSTORE_TYPE}
+        -Dgnarly.keystore.alias=$ENV{GNARLY_KEYSTORE_ALIAS}
+        -Dgnarly.keystore.password=$ENV{GNARLY_KEYSTORE_PASSWORD}
+        -Dgnarly.tsa=$ENV{GNARLY_TSA}
+        COMMAND ${CMAKE_COMMAND} -E echo "--- [DEBUG] Maven finished. Verifying source JAR..."
+        COMMAND ${CMAKE_COMMAND} -E echo "--- [DEBUG] Preparing to copy..."
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${JAVA_ARTIFACT_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy "${JAVA_CORE_JAR_SOURCE}" "${JAVA_CORE_JAR_DEST}"
+        COMMAND ${CMAKE_COMMAND} -E echo "--- [DEBUG]  finished. ..."
 
 
         DEPENDS rtaudiojava
