@@ -83,6 +83,10 @@
 #include <vector>
 #include <iostream>
 #include <functional>
+#include <memory>
+
+namespace rt {
+namespace audio {
 
 /*! \typedef typedef unsigned long RtAudioFormat;
     \brief RtAudio data format type.
@@ -438,7 +442,7 @@ class RTAUDIO_DLL_PUBLIC RtAudio
     If a stream is running or open, it will be stopped and closed
     automatically.
   */
-  ~RtAudio();
+  ~RtAudio() { }
 
   //! Returns the audio API specifier for the current instance of RtAudio.
   RtAudio::Api getCurrentApi( void );
@@ -645,8 +649,11 @@ class RTAUDIO_DLL_PUBLIC RtAudio
  protected:
 
   void openRtApi( RtAudio::Api api );
-  RtApi *rtapi_;
+  std::shared_ptr<RtApi> rtapi_;
 };
+
+} // namespace audio
+} // namespace rt
 
 // Operating system dependent thread functionality.
 #if defined(_MSC_VER)
@@ -658,16 +665,24 @@ class RTAUDIO_DLL_PUBLIC RtAudio
   #include <process.h>
   #include <stdint.h>
 
+namespace rt {
+namespace audio {
   typedef uintptr_t ThreadHandle;
   typedef CRITICAL_SECTION StreamMutex;
+} // namespace audio
+} // namespace rt
 
 #else
 
   // Using pthread library for various flavors of unix.
   #include <pthread.h>
 
+namespace rt {
+namespace audio {
   typedef pthread_t ThreadHandle;
   typedef pthread_mutex_t StreamMutex;
+} // namespace audio
+} // namespace rt
 
 #endif
 
@@ -679,6 +694,9 @@ class RTAUDIO_DLL_PUBLIC RtAudio
   #define __RTAUDIO_DUMMY__
 
 #endif
+
+namespace rt {
+namespace audio {
 
 // This global structure type is used to pass callback information
 // between the private RtAudio stream structure and global callback
@@ -738,11 +756,17 @@ class S24 {
 };
 #pragma pack(pop)
 
+} // namespace audio
+} // namespace rt
+
 #if defined( HAVE_GETTIMEOFDAY )
   #include <sys/time.h>
 #endif
 
 #include <sstream>
+
+namespace rt {
+namespace audio {
 
 class RTAUDIO_DLL_PUBLIC RtApi
 {
@@ -929,6 +953,13 @@ inline void RtAudio :: setStreamTime( double time ) { return rtapi_->setStreamTi
 inline void RtAudio :: setErrorCallback( RtAudioErrorCallback errorCallback ) { rtapi_->setErrorCallback( errorCallback ); }
 inline void RtAudio :: showWarnings( bool value ) { rtapi_->showWarnings( value ); }
 
+} // namespace audio
+} // namespace rt
+
+#endif
+
+#ifndef RTAUDIO_USE_NAMESPACE
+using namespace rt::audio;
 #endif
 
 // Indentation settings for Vim and Emacs
