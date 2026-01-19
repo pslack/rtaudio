@@ -569,7 +569,7 @@ class RtAudioCallbackWrapper{
 // this is the function that all streams use as callback address
 // the userdata sets the index into the array of function pointers
 
-static int java_callback(void *outputBuffer, void *inputBuffer,
+static [[maybe_unused]] int java_callback(void *outputBuffer, void *inputBuffer,
                          unsigned int nFrames,
                          double streamTime,
                          RtAudioStreamStatus status,
