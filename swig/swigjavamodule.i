@@ -1,13 +1,5 @@
 %module(directors="1") RtAudioAPI
 
-%include <cpointer.i>
-%include <std_string.i>
-%include <stdint.i>
-%include <typemaps.i>
-%include <std_vector.i>
-
-%ignore CallbackInfo;
-
 %{
 #include "RtAudio.h"
 #include <string>
@@ -17,17 +9,25 @@
 #include <memory>
 #include "swigstructs.h"
 #include <mutex>
+
+%}
+
+
+%include <cpointer.i>
+%include <std_string.i>
+%include <stdint.i>
+%include <typemaps.i>
+%include <std_vector.i>
+%ignore CallbackInfo;
+
+
+%{
 class RtAudioCallbackWrapper;
 
 // NEW: global variables (bleurgh!)
 // Global mutex for protecting callbacks and functors
 std::mutex callbackMutex;
-
-
-
 static JavaVM *jvm;
-
-
 // Map to store Java object references and their corresponding wrappers, keyed by index
 std::map<int, std::pair<jobject, std::shared_ptr<RtAudioCallbackWrapper>>> callbackWrappers = {};
 
@@ -537,10 +537,7 @@ class RtAudioCallbackWrapper{
             }
         }
 
-
         private:
-
-
 
         // the size related to the format requested
         int formatSize;
@@ -599,23 +596,6 @@ class RtAudioCallbackWrapper{
         return 2;
     }
 
-
-//    // get the function pointer from the array
-//    std::function<int( void *outputBuffer, void *inputBuffer,
-//                       unsigned int nFrames,
-//                       double streamTime,
-//                       RtAudioStreamStatus status,
-//                       void *userData )> func = functors[index];
-//    // check that the function pointer is valid
-//   if(func != NULL){
-//       // call the function pointer
-//       return func(outputBuffer, inputBuffer, nFrames, streamTime, status, userData);
-//   } else {
-//       // return a stream error abort the stream immediately
-//
-//       return 2;
-//   }
-
 }
 
 void printObjecttoString(jobject obj) {
@@ -642,9 +622,6 @@ void printObjecttoString(jobject obj) {
 
 
 %pragma(java) modulecode=%{
-
-
-
     public interface RtAudioCallBackInterface {
         public int callback(java.nio.ByteBuffer outbuffer, java.nio.ByteBuffer inbuffer, int buffer_size,
                             double stream_time, int status,long outbufferptr, long inbufferptr);
@@ -671,29 +648,23 @@ void printObjecttoString(jobject obj) {
         public void setBufferSize(int bufferSize);
    }
 
-
-
 %}
 
 
 
-
-namespace std {
-        %template(vuint) vector<unsigned int>;
-        %template(vstring) vector<string>;
-};
-
 %pointer_functions(unsigned int, UnsignedIntPtr);
-
-
 // 3:
-%typemap(jstype) RtAudioCallback "RtAudioAPI.RtAudioCallBackInterface";
-%typemap(jtype) RtAudioCallback "RtAudioAPI.RtAudioCallBackInterface";
-%typemap(jni) RtAudioCallback "jobject";
-%typemap(javain) RtAudioCallback "$javainput";
+
+// use the RtAudioCallback typemaps we defined below."
+%apply RtAudioCallback { std::function<int(void*, void*, unsigned int, double, RtAudioStreamStatus, void*)> };
+
+%typemap(jstype) rt::audio::RtAudioCallback "RtAudioAPI.RtAudioCallBackInterface";
+%typemap(jtype) rt::audio::RtAudioCallback "RtAudioAPI.RtAudioCallBackInterface";
+%typemap(jni) rt::audio::RtAudioCallback "jobject";
+%typemap(javain) rt::audio::RtAudioCallback "$javainput";
 
 
-%typemap(in) RtAudioCallback {
+%typemap(in) rt::audio::RtAudioCallback {
 
     std::cout << "hello wrapper XXX"    << std::endl;
 
@@ -797,7 +768,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-
 
 %}
 
@@ -971,3 +941,7 @@ public static void loadLibraryFromJar(String path) throws IOException {
 }
 %}
 
+namespace std {
+        %template(vuint) vector<unsigned int>;
+        %template(vstring) vector<string>;
+};
