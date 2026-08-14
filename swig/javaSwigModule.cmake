@@ -14,8 +14,16 @@ if(APPLE)
     set(JAVA_AWT_INCLUDE_PATH ${JAVA_INCLUDE_PATH} CACHE PATH "Java awt include directory")
 endif(APPLE)
 
+# If JNI paths are already defined (e.g. from parent CMake or toolchain hints), use them
+if(JAVA_INCLUDE_PATH AND JAVA_INCLUDE_PATH2)
+    set(JNI_INCLUDE_DIRS ${JAVA_INCLUDE_PATH} ${JAVA_INCLUDE_PATH2})
+    set(JNI_LIBRARIES ${JAVA_JVM_LIBRARY})
+    set(JNI_FOUND TRUE)
+    message(STATUS "Using pre-configured JNI paths for cross-compilation: ${JNI_INCLUDE_DIRS}")
+else()
+    find_package(JNI REQUIRED COMPONENTS JVM)
+endif()
 
-find_package(JNI REQUIRED COMPONENTS JVM)
 
 if (JNI_FOUND)
     message (STATUS "JNI_INCLUDE_DIRS=${JNI_INCLUDE_DIRS}")
